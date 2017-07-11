@@ -92,25 +92,9 @@ Fs = Dinf.indev.Fs;
 fband = [HPFreq LPFreq] ./ (0.5 * Fs);
 [filtB, filtA] = butter(5, fband);
 %% Get test info
-% try to get information from test Type
-if isfield(Dinf.test, 'Type')
-	% convert ascii characters from binary file
-	Dinf.test.Type = char(Dinf.test.Type);
-	fprintf('Test type: %s\n', Dinf.test.Type);
-else
-	% otherwise, need to find a different way
-	if isfield(Dinf.test, 'optovar_name')
-		Dinf.test.optovar_name = char(Dinf.test.optovar_name);
-	end
-	if isfield(Dinf.test, 'audiovar_name')
-		Dinf.test.audiovar_name = char(Dinf.test.audiovar_name);
-		if strcmpi(Dinf.test.audiovar_name, 'WAVFILE')
-		% test is WAVfile
-		Dinf.test.Type = Dinf.test.audiovar_name;
-		end
-	end
-	fprintf('Test type: %s\n', Dinf.test.Type);
-end
+Dinf = correctTestType(Dinf);
+fprintf('Test type: %s\n', Dinf.test.Type);
+
 %%
 % Some test-specific things...
 % for FREQ test, find indices of stimuli with same frequency
@@ -161,6 +145,7 @@ switch upper(Dinf.test.Type)
 			end
 			stimindex{w} = find(Dinf.test.stimIndices == w);
 		end
+		Dinf.test.wavlist = wavlist;
 	otherwise
 		error('%s: unsupported test type %s', mfilename, Dinf.test.Type);
 end
@@ -180,10 +165,8 @@ channelIndex = find(channelList == channelNumber);
 if isempty(channelIndex)
 	error('%s: Channel %d not recorded', mfilename, channelNumber);
 end
-%% Plot data for one channel, process will vary depending on stimulus type
+%% build tracesByStim; process will vary depending on stimulus type
 if strcmpi(Dinf.test.Type, 'FREQ')
-	% time vector for plotting
-	t = (1000/Fs)*((1:length(D{1}.datatrace(:, 1))) - 1);
 	tracesByStim = cell(nfreqs, 1);
 	for f = 1:nfreqs
 		dlist = stimindex{f};
@@ -193,14 +176,9 @@ if strcmpi(Dinf.test.Type, 'FREQ')
 			tracesByStim{f}(:, n) = filtfilt(filtB, filtA, ...
 												D{dlist(n)}.datatrace(:, channelIndex));
 		end
-		stackplot(t, tracesByStim{f}, 'colormode', 'black');
-		title(sprintf('Channel %d, Freq %d', channelNumber, ...
-		Dinf.test.stimcache.vrange(f)));
 	end
 end
 if strcmpi(Dinf.test.Type, 'LEVEL')
-	% time vector for plotting
-	t = (1000/Fs)*((1:length(D{1}.datatrace(:, 1))) - 1);
 	tracesByStim = cell(nlevels, 1);
 	for l = 1:nlevels
 		dlist = stimindex{l};
@@ -210,14 +188,9 @@ if strcmpi(Dinf.test.Type, 'LEVEL')
 			tracesByStim{l}(:, n) = filtfilt(filtB, filtA, ...
 													D{dlist(n)}.datatrace(:, channelIndex));
 		end
-		stackplot(t, tracesByStim{l}, 'colormode', 'black');
-		title(sprintf('Channel %d, Level %d', channelNumber, ...
-		Dinf.test.stimcache.vrange(l)));
 	end
 end
 if strcmpi(Dinf.test.Type, 'WavFile')
-	% time vector for plotting - assume all traces are equal length
-	t = (1000/Fs)*((1:length(D{1}.datatrace(:, 1))) - 1);
 	tracesByStim = cell(nwavs, 1);
 	for w = 1:nwavs
 		% create temporary array to hold data
@@ -227,11 +200,6 @@ if strcmpi(Dinf.test.Type, 'WavFile')
 			tracesByStim{w}(:, n) = filtfilt(filtB, filtA, ...
 														D{dIndx}.datatrace(:, channelIndex));
 		end
-	stackplot(t, tracesByStim{w}, 'colormode', 'black');
-	title({ datafile, sprintf('Stimulus: %s', wavlist{w})}, ...
-	'Interpreter', 'none');
-	xlabel('ms')
-	ylabel('Trial')
 	end
 end
 
