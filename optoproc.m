@@ -1,17 +1,22 @@
-clear all
+clear all %#ok<CLALL>
 
 %% settings for processing data
 HPFreq = 350;
 LPFreq = 6500;
 
-Threshold = 4.5;
+% Threshold = 4.5;
 Threshold = 3;
 %% Read Data
-datapath = '/Users/sshanbhag/Work/Data/Mouse/Opto/1157/20170707/';
+datapath = '/Users/sshanbhag/Work/Data/Mouse/Opto/1151/20170927';
+% datapath = '/Users/sshanbhag/Work/Data/Mouse/Opto/1157/20170707/';
 % datafile = '1157_20170707_01_01_639_BBN_LEVEL_dur100.dat';
 % datafile = '1157_20170707_01_01_639_BBN_LEVEL.dat';
 % get data file from user
 [datafile, datapath] = uigetfile('*.dat', 'Select opto data file', datapath);
+if isempty(datafile)
+	return
+end
+
 [D, Dinf, tracesByStim] = getFilteredOptoData(fullfile(datapath, datafile), ...
 																	[HPFreq LPFreq]);
 if isempty(D)
