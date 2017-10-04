@@ -1,4 +1,4 @@
-clear all %#ok<CLALL>
+clear all %#ok<CLSCR>
 
 %% settings for processing data
 HPFreq = 350;
@@ -6,6 +6,7 @@ LPFreq = 6500;
 
 % Threshold = 4.5;
 Threshold = 3;
+
 %% Read Data
 datapath = '/Users/sshanbhag/Work/Data/Mouse/Opto/1151/20170927';
 % datapath = '/Users/sshanbhag/Work/Data/Mouse/Opto/1157/20170707/';
@@ -15,6 +16,10 @@ datapath = '/Users/sshanbhag/Work/Data/Mouse/Opto/1151/20170927';
 [datafile, datapath] = uigetfile('*.dat', 'Select opto data file', datapath);
 if isempty(datafile)
 	return
+end
+
+if ~exist('readOptoData.m')
+	addpath('/Users/sshanbhag/Work/Code/Matlab/dev/TytoLogy/Experiments/Opto');
 end
 
 [D, Dinf, tracesByStim] = getFilteredOptoData(fullfile(datapath, datafile), ...
@@ -72,9 +77,9 @@ switch upper(Dinf.test.Type)
 		for v = 1:nvars
 			if v == 1
 				titleString{v} = {fname, ...
-										sprintf('Frequency = %d kHz', 0.001*varlist(v))};
+										sprintf('Frequency = %.0f kHz', 0.001*varlist(v))};
 			else
-				titleString{v} = sprintf('Frequency = %d kHz', 0.001*varlist(v));
+				titleString{v} = sprintf('Frequency = %.0f kHz', 0.001*varlist(v));
 			end
 		end
 	case 'LEVEL'
@@ -146,8 +151,27 @@ plotopts.raster_ticksize = 16;
 plotopts.psth_binwidth = 10;
 plotopts.plotgap = 0.001;
 plotopts.xlabel = 'msec';
-plotopts.plot_titles = titleString;
+
+% determine # of columns of plots
+if nvars <= 5
+	plotopts.plot_titles = titleString;
+elseif iseven(nvars)
+	prows = nvars/2;
+	pcols = 2;	
+	plotopts.plot_titles = reshape(titleString, [prows pcols]);
+	spiketimes = reshape(spiketimes, [prows pcols]);
+else
+	prows = ceil(nvars/2);
+	pcols = 2;
+	titleString = [titleString; {''}];
+	spiketimes = [spiketimes; {{}}];
+	plotopts.plot_titles = reshape(titleString, [prows pcols]);
+	spiketimes = reshape(spiketimes, [prows pcols]);
+end
+
+% plot!
 rasterpsthmatrix(spiketimes, plotopts)
+	
 set(hPR, 'Name', fname)
 
 % save plot
