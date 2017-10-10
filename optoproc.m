@@ -1,3 +1,28 @@
+%------------------------------------------------------------------------
+% optoproc
+%------------------------------------------------------------------------
+% % TytoLogy:Experiments:opto Application
+%--------------------------------------------------------------------------
+% Processes data collected by the opto program
+%
+%------------------------------------------------------------------------
+%------------------------------------------------------------------------
+% See Also:
+%------------------------------------------------------------------------
+
+%------------------------------------------------------------------------
+%  Sharad Shanbhag
+%   sshanbhag@neomed.edu
+%------------------------------------------------------------------------
+% Created: ???
+%
+% Revisions:
+%	see git!
+%------------------------------------------------------------------------
+% TO DO:
+%	- Document
+%	- Functionalize
+%--------------------------------------------------------------------------
 clear all %#ok<CLSCR>
 
 %% settings for processing data
@@ -7,23 +32,58 @@ LPFreq = 6500;
 % Threshold = 4.5;
 Threshold = 3;
 
+% Channel (for multichannel data)
+
+%% need to get information about system
+if ~exist('username', 'file')
+	warning('Cannot find <username.m> function... assuming mac for os');
+	uname = 'sshanbhag';
+	os_type = 'MACI64';
+	hname = 'parvati';
+else
+	[uname, os_type, hname] = username;
+end
+
+switch os_type
+	case {'PCWIN', 'PCWIN64'}
+		% assume we are using the opto computer (optocom)
+		data_root_path = 'E:\Data\SJS';
+		tytology_root_path = 'C:\TytoLogy';
+	
+	case {'MAC', 'MACI', 'GLNXA64', 'MACI64'}
+		data_root_path = '/Users/sshanbhag/Work/Data/Mouse/Opto';
+		tytology_root_path = ...
+								'/Users/sshanbhag/Work/Code/Matlab/dev/TytoLogy';
+
+end
 %% Read Data
-datapath = '/Users/sshanbhag/Work/Data/Mouse/Opto/1151/20170927';
+
+% add animal and datestring if desired
+animal = '1151';
+datestring = '20170927';
+
+% build datapath
+datapath = fullfile(data_root_path, animal, datestring);
+
 % datapath = '/Users/sshanbhag/Work/Data/Mouse/Opto/1157/20170707/';
 % datafile = '1157_20170707_01_01_639_BBN_LEVEL_dur100.dat';
 % datafile = '1157_20170707_01_01_639_BBN_LEVEL.dat';
+
 % get data file from user
-[datafile, datapath] = uigetfile('*.dat', 'Select opto data file', datapath);
+[datafile, datapath] = uigetfile('*.dat', 'Select opto data file', ...
+																					datapath);
+% abort if cancelled
 if isempty(datafile)
 	return
 end
-
-if ~exist('readOptoData.m')
-	addpath('/Users/sshanbhag/Work/Code/Matlab/dev/TytoLogy/Experiments/Opto');
+% add path to opto - needed for 
+if ~exist('readOptoData.m', 'file')
+	addpath(fullfile(tytology_root_path, 'Experiments', 'Opto'));
 end
-
-[D, Dinf, tracesByStim] = getFilteredOptoData(fullfile(datapath, datafile), ...
-																	[HPFreq LPFreq]);
+% 
+[D, Dinf, tracesByStim] = getFilteredOptoData( ...
+											fullfile(datapath, datafile), ...
+											[HPFreq LPFreq]);
 if isempty(D)
 	return
 end
