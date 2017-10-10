@@ -36,7 +36,12 @@ LPFreq = 6500;
 Threshold = 3;
 % Channel Number (use 8 for single channel data)
 channelNumber = 5;
-
+% binSize for PSTH (milliseconds)
+binSize = 5;
+% SAVE PLOTS?
+saveFIG = 0;
+savePNG = 0;
+savePDF = 1;
 %---------------------------------------------------------------------
 %% need to get information about system
 %---------------------------------------------------------------------
@@ -69,7 +74,8 @@ plotpath_base = fullfile(data_root_path, 'Analyzed');
 % add animal and datestring if desired
 animal = '1155';
 datestring = '20171006';
-datafile = '1155_20171006_04_03_3123_FREQoptoON_ch5ch11_3.dat';
+datafile = '';
+% datafile = '1155_20171006_04_03_3123_FREQoptoON_ch5ch11_3.dat';
 
 % build datapath
 datapath = fullfile(data_root_path, animal, datestring);
@@ -116,12 +122,13 @@ other = fname(startusc(end):end);
 %---------------------------------------------------------------------
 % create plot output dir
 %---------------------------------------------------------------------
-plotpath = fullfile(plotpath_base, animal, datecode);
-fprintf('Files will be written to:\n\t%s\n', plotpath);
-if ~exist(plotpath, 'dir')
-	mkdir(plotpath);
+if any([saveFIG savePDF savePNG])
+	plotpath = fullfile(plotpath_base, animal, datecode); 
+	fprintf('Files will be written to:\n\t%s\n', plotpath);
+	if ~exist(plotpath, 'dir')
+		mkdir(plotpath);
+	end
 end
-
 %---------------------------------------------------------------------
 %% determine global RMS and max
 %---------------------------------------------------------------------
@@ -143,7 +150,6 @@ fprintf('\tMean rms: %.4f\n', mean_rms);
 % find global max value (will be used for plotting)
 global_max = max(max(maxvals));
 fprintf('\tGlobal max abs value: %.4f\n', global_max);
-
 
 %---------------------------------------------------------------------
 %% Some test-specific things...
@@ -207,7 +213,7 @@ end
 %---------------------------------------------------------------------
 %% Plot raw data
 %---------------------------------------------------------------------
-hF = figure(1);
+hF = figure;
 set(hF, 'Name', [fname '_sweeps']);
 
 % determine # of columns of plots
@@ -236,40 +242,87 @@ for v = 1:nvars
 end
 
 % save plot
-pname = fullfile(plotpath, [fname '_traces']);
-savefig(hF, pname, 'compact');
-print(hF, pname, '-dpng', '-r300');
-
+pname = fullfile(plotpath, [fname '_traces']); 
+if saveFIG
+	savefig(hF, pname, 'compact');
+end
+if savePDF
+	print(hF, pname, '-dpdf');
+end
+if savePNG
+	print(hF, pname, '-dpng', '-r300');
+end
 %---------------------------------------------------------------------
 %% raster, psths
 %---------------------------------------------------------------------
-hPR = figure(2);
+hPR = figure;
 plotopts.timelimits = [0 ceil(max(t))];
 plotopts.raster_tickmarker = '.';
 plotopts.raster_ticksize = 16;
-plotopts.psth_binwidth = 10;
+plotopts.raster_color = [0 0 0];
+plotopts.psth_binwidth = binSize;
 plotopts.plotgap = 0.001;
 plotopts.xlabel = 'msec';
+plotopts.stimulus_times_plot = 3;
+plotopts.stimulus_on_color{1} = [0 0 1];
+plotopts.stimulus_off_color{1} = [0 0 1];
+plotopts.stimulus_onoff_pct(1) = 80;
+if Dinf.opto.Enable
+	% add colors for second stimulus
+	plotopts.stimulus_on_color{2} = [1 0 0];
+	plotopts.stimulus_off_color{2} = [1 0 0];
+	plotopts.stimulus_onoff_pct(2) = 90;
+end
+
+plotopts.psth_ylimits = [0 20];
+
+% create times to indicate stimuli
+stimulus_times = cell(nvars, 1);
+for v = 1:nvars
+	% need to have [stim_onset stim_offset], so add delay to 
+	% [0 duration] to compute proper times. then, multiply by 0.001 to
+	% give times in seconds (Dinf values are in milliseconds)
+	stimulus_times{v, 1} = 0.001 * (Dinf.audio.Delay + ...
+														[0 Dinf.audio.Duration]);
+	% if opto is Enabled, add it to the array by concatenation
+	if Dinf.opto.Enable
+		stimulus_times{v, 1} = [stimulus_times{v, 1}; ...
+											 0.001 * (Dinf.opto.Delay + ...
+														[0 Dinf.opto.Dur]) ];
+	end
+end
 
 % adjust depending on # of columns of plots
 if nvars <= 5
 	plotopts.plot_titles = titleString;
+	plotopts.stimulus_times = stimulus_times;
+	rasterpsthmatrix(spiketimes, plotopts);
 elseif iseven(nvars)
 	plotopts.plot_titles = reshape(titleString, [prows pcols]);
-	spiketimes = reshape(spiketimes, [prows pcols]);
+	plotopts.stimulus_times = reshape(stimulus_times, [prows pcols]);
+	rasterpsthmatrix(reshape(spiketimes, [prows pcols]), plotopts);
 else
-	titleString = [titleString; {''}];
-	spiketimes = [spiketimes; {{}}];
-	plotopts.plot_titles = reshape(titleString, [prows pcols]);
-	spiketimes = reshape(spiketimes, [prows pcols]);
+	% need to add 'dummy' element to arrays
+% 	titleString = [titleString; {''}];
+% 	spiketimes = [spiketimes; {{}}];
+	plotopts.plot_titles = reshape([titleString; {''}], [prows pcols]);
+	plotopts.stimulus_times = reshape([stimulus_times; stimulus_times{end}], [prows pcols]);
+	rasterpsthmatrix(reshape([spiketimes; {{}}], [prows pcols]), plotopts);
 end
-
-% plot!
-rasterpsthmatrix(spiketimes, plotopts)
-	
+% set plot name
 set(hPR, 'Name', fname)
 
 % save plot
 pname = fullfile(plotpath, [fname '_rp']);
-savefig(hPR, pname, 'compact');
-print(hPR, pname, '-dpng', '-r300');
+if saveFIG
+	savefig(hPR, pname, 'compact');
+end
+if savePDF
+	print(hPR, pname, '-dpdf');
+end
+if savePNG
+	print(hPR, pname, '-dpng', '-r300');
+end
+
+
+
