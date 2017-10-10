@@ -25,16 +25,21 @@
 %--------------------------------------------------------------------------
 clear all %#ok<CLSCR>
 
+%---------------------------------------------------------------------
 %% settings for processing data
+%---------------------------------------------------------------------
+% filter
 HPFreq = 350;
 LPFreq = 6500;
-
+% RMS spike threshold
 % Threshold = 4.5;
 Threshold = 3;
+% Channel Number (use 8 for single channel data)
+channelNumber = 5;
 
-% Channel (for multichannel data)
-
+%---------------------------------------------------------------------
 %% need to get information about system
+%---------------------------------------------------------------------
 if ~exist('username', 'file')
 	warning('Cannot find <username.m> function... assuming mac for os');
 	uname = 'sshanbhag';
@@ -54,13 +59,17 @@ switch os_type
 		data_root_path = '/Users/sshanbhag/Work/Data/Mouse/Opto';
 		tytology_root_path = ...
 								'/Users/sshanbhag/Work/Code/Matlab/dev/TytoLogy';
-
 end
-%% Read Data
+% output path for plots
+plotpath_base = fullfile(data_root_path, 'Analyzed');
 
+%---------------------------------------------------------------------
+%% Read Data
+%---------------------------------------------------------------------
 % add animal and datestring if desired
-animal = '1151';
-datestring = '20170927';
+animal = '1155';
+datestring = '20171006';
+datafile = '1155_20171006_04_03_3123_FREQoptoON_ch5ch11_3.dat';
 
 % build datapath
 datapath = fullfile(data_root_path, animal, datestring);
@@ -71,11 +80,13 @@ datapath = fullfile(data_root_path, animal, datestring);
 
 % get data file from user
 [datafile, datapath] = uigetfile('*.dat', 'Select opto data file', ...
-																					datapath);
+													fullfile(datapath, datafile));
 % abort if cancelled
-if isempty(datafile)
+if datafile == 0
+	fprintf('Cancelled\n');
 	return
 end
+
 % add path to opto - needed for 
 if ~exist('readOptoData.m', 'file')
 	addpath(fullfile(tytology_root_path, 'Experiments', 'Opto'));
@@ -83,12 +94,15 @@ end
 % 
 [D, Dinf, tracesByStim] = getFilteredOptoData( ...
 											fullfile(datapath, datafile), ...
-											[HPFreq LPFreq]);
+											'Filter', [HPFreq LPFreq], ...
+											'Channel', channelNumber);
 if isempty(D)
 	return
 end
 
+%---------------------------------------------------------------------
 %% get info from filename
+%---------------------------------------------------------------------
 [~, fname] = fileparts(datafile);
 usc = find(fname == '_');
 endusc = usc - 1;
@@ -99,15 +113,18 @@ penetration = fname(startusc(2):endusc(3));
 unit = fname(startusc(3):endusc(4));
 other = fname(startusc(end):end);
 
+%---------------------------------------------------------------------
 % create plot output dir
-plotpath_base = '/Users/sshanbhag/Work/Data/Mouse/Opto/Analyzed';
+%---------------------------------------------------------------------
 plotpath = fullfile(plotpath_base, animal, datecode);
 fprintf('Files will be written to:\n\t%s\n', plotpath);
 if ~exist(plotpath, 'dir')
 	mkdir(plotpath);
 end
 
+%---------------------------------------------------------------------
 %% determine global RMS and max
+%---------------------------------------------------------------------
 % first, get  # of stimuli (called ntrials by opto) as well as # of reps
 nstim = Dinf.test.stimcache.ntrials;
 nreps = Dinf.test.stimcache.nreps;
@@ -119,15 +136,18 @@ for s = 1:nstim
 	netrmsvals(s, :) = rms(tracesByStim{s});
 	maxvals(s, :) = max(abs(tracesByStim{s}));
 end
-% compute overall mean rms
+% compute overall mean rms fir threshold
+fprintf('Calculating mean and max RMS for data...\n');
 mean_rms = mean(reshape(netrmsvals, numel(netrmsvals), 1));
-fprintf('Mean rms: %.4f\n', mean_rms);
+fprintf('\tMean rms: %.4f\n', mean_rms);
 % find global max value (will be used for plotting)
 global_max = max(max(maxvals));
-fprintf('Global max abs value: %.4f\n', global_max);
+fprintf('\tGlobal max abs value: %.4f\n', global_max);
 
 
+%---------------------------------------------------------------------
 %% Some test-specific things...
+%---------------------------------------------------------------------
 switch upper(Dinf.test.Type)
 	case 'FREQ'
 		% list of frequencies, and # of freqs tested
@@ -172,7 +192,9 @@ switch upper(Dinf.test.Type)
 		error('%s: unsupported test type %s', mfilename, Dinf.test.Type);
 end
 
+%---------------------------------------------------------------------
 %% find spikes!
+%---------------------------------------------------------------------
 Fs = Dinf.indev.Fs;
 spiketimes = cell(nvars, 1);
 for v = 1:nvars
@@ -182,13 +204,28 @@ for v = 1:nvars
 	end
 end
 
+%---------------------------------------------------------------------
 %% Plot raw data
+%---------------------------------------------------------------------
 hF = figure(1);
 set(hF, 'Name', [fname '_sweeps']);
+
+% determine # of columns of plots
+if nvars <= 5
+	prows = nvars;
+	pcols = 1;	
+elseif iseven(nvars)
+	prows = nvars/2;
+	pcols = 2;
+else
+	prows = ceil(nvars/2);
+	pcols = 2;
+end
+
 for v = 1:nvars
 	% time vector for plotting
 	t = (1000/Fs)*((1:length(tracesByStim{v}(:, 1))) - 1);
-	subplot(nvars, 1, v);
+	subplot(prows, pcols, v);
 	% flip tracesByStim in order to have sweeps match the raster plots
 	stackplot(t, fliplr(tracesByStim{v}), 'colormode', 'black', ...
 											'ymax', global_max, ...
@@ -203,7 +240,9 @@ pname = fullfile(plotpath, [fname '_traces']);
 savefig(hF, pname, 'compact');
 print(hF, pname, '-dpng', '-r300');
 
+%---------------------------------------------------------------------
 %% raster, psths
+%---------------------------------------------------------------------
 hPR = figure(2);
 plotopts.timelimits = [0 ceil(max(t))];
 plotopts.raster_tickmarker = '.';
@@ -212,17 +251,13 @@ plotopts.psth_binwidth = 10;
 plotopts.plotgap = 0.001;
 plotopts.xlabel = 'msec';
 
-% determine # of columns of plots
+% adjust depending on # of columns of plots
 if nvars <= 5
 	plotopts.plot_titles = titleString;
 elseif iseven(nvars)
-	prows = nvars/2;
-	pcols = 2;	
 	plotopts.plot_titles = reshape(titleString, [prows pcols]);
 	spiketimes = reshape(spiketimes, [prows pcols]);
 else
-	prows = ceil(nvars/2);
-	pcols = 2;
 	titleString = [titleString; {''}];
 	spiketimes = [spiketimes; {{}}];
 	plotopts.plot_titles = reshape(titleString, [prows pcols]);
