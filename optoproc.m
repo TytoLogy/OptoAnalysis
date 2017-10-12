@@ -1,3 +1,4 @@
+function varargout = optoproc(varargin)
 %------------------------------------------------------------------------
 % optoproc
 %------------------------------------------------------------------------
@@ -23,11 +24,13 @@
 %	- Document
 %	- Functionalize
 %--------------------------------------------------------------------------
-clearvars
-
+nargout
+nargin
 %---------------------------------------------------------------------
-%% settings for processing data
+% settings for processing data
 %---------------------------------------------------------------------
+datafile = '';
+plotpath_base = '';
 % filter
 HPFreq = 350;
 LPFreq = 6500;
@@ -35,69 +38,128 @@ LPFreq = 6500;
 % Threshold = 4.5;
 Threshold = 3;
 % Channel Number (use 8 for single channel data)
-channelNumber = 5;
+channelNumber = 8;
 % binSize for PSTH (milliseconds)
 binSize = 5;
 % SAVE PLOTS?
 saveFIG = 0;
 savePNG = 0;
-savePDF = 1;
+savePDF = 0;
+timeLimits = [];
+yLimits = [];
+
 %---------------------------------------------------------------------
-%% need to get information about system
+% Parse inputs
+%---------------------------------------------------------------------
+if nargin
+	argIndx = 1;
+	while argIndx <= nargin
+		fprintf('%s\n', upper(varargin{argIndx}))
+		switch upper(varargin{argIndx})
+			case {'DATAFILE', 'FILE'}
+				datafile = varargin{argIndx + 1};
+				[datapath, dfile, dext] = fileparts(datafile);
+				datafile = [dfile dext];
+				argIndx = argIndx + 2;
+			case 'PLOTPATH'
+				plotpath_base = varargin{argIndx + 1};
+				argIndx = argIndx + 2;
+			case 'HPFREQ'
+				HPFreq = varargin{argIndx + 1};
+				argIndx = argIndx + 2;
+			case 'LPFREQ'
+				LPFreq = varargin{argIndx + 1};
+				argIndx = argIndx + 2;
+			case 'THRESHOLD'
+				Threshold = varargin{argIndx + 1};
+				argIndx = argIndx + 2;
+			case 'CHANNEL'
+				channelNumber = varargin{argIndx + 1};
+				argIndx = argIndx + 2;
+			case 'BINSIZE'
+				binSize = varargin{argIndx + 1};
+				argIndx = argIndx + 2;
+			case 'SAVEFIG'
+				saveFIG = 1;
+				argIndx = argIndx + 1;
+			case 'SAVEPNG'
+				savePNG = 1;
+				argIndx = argIndx + 1;
+			case 'SAVEPDF'
+				savePDF = 1;
+				argIndx = argIndx + 1;
+			case 'TIMELIMITS'
+				timeLimits = 1;
+				argIndx = argIndx + 1;
+			case 'YLIMITS'
+				yLimits = 1;
+				argIndx = argIndx + 1;
+			otherwise
+				error('%s: unknown input arg %s', mfilename, varargin{argIndx});
+		end
+	end
+end
+
+%---------------------------------------------------------------------
+% need to get information about system
 %---------------------------------------------------------------------
 if ~exist('username', 'file')
 	warning('Cannot find <username.m> function... assuming mac for os');
-	uname = 'sshanbhag';
+% 	uname = 'sshanbhag';
 	os_type = 'MACI64';
-	hname = 'parvati';
+% 	hname = 'parvati';
 else
-	[uname, os_type, hname] = username;
+% 	[uname, os_type, hname] = username;
+	[~, os_type, ~] = username;
 end
-
-switch os_type
-	case {'PCWIN', 'PCWIN64'}
-		% assume we are using the opto computer (optocom)
-		data_root_path = 'E:\Data\SJS';
-		tytology_root_path = 'C:\TytoLogy';
-	
-	case {'MAC', 'MACI', 'GLNXA64', 'MACI64'}
-		data_root_path = '/Users/sshanbhag/Work/Data/Mouse/Opto';
-		tytology_root_path = ...
-								'/Users/sshanbhag/Work/Code/Matlab/dev/TytoLogy';
-end
-% output path for plots
-plotpath_base = fullfile(data_root_path, 'Analyzed');
-
-%---------------------------------------------------------------------
-%% Read Data
-%---------------------------------------------------------------------
-% add animal and datestring if desired
-animal = '1155';
-datestring = '20171006';
-datafile = '';
-% datafile = '1155_20171006_04_03_3123_FREQoptoON_ch5ch11_3.dat';
-
-% build datapath
-datapath = fullfile(data_root_path, animal, datestring);
-
-% datapath = '/Users/sshanbhag/Work/Data/Mouse/Opto/1157/20170707/';
-% datafile = '1157_20170707_01_01_639_BBN_LEVEL_dur100.dat';
-% datafile = '1157_20170707_01_01_639_BBN_LEVEL.dat';
-
-% get data file from user
-[datafile, datapath] = uigetfile('*.dat', 'Select opto data file', ...
-													fullfile(datapath, datafile));
-% abort if cancelled
-if datafile == 0
-	fprintf('Cancelled\n');
-	return
-end
-
-% add path to opto - needed for 
+% add path to opto directory - needed for reading in data
 if ~exist('readOptoData.m', 'file')
+	switch os_type
+		case {'PCWIN', 'PCWIN64'}
+			% assume we are using the opto computer (optocom)
+			tytology_root_path = 'C:\TytoLogy';
+		case {'MAC', 'MACI', 'GLNXA64', 'MACI64'}
+			tytology_root_path = ...
+									'/Users/sshanbhag/Work/Code/Matlab/dev/TytoLogy';
+	end	
 	addpath(fullfile(tytology_root_path, 'Experiments', 'Opto'));
 end
-% 
+
+%---------------------------------------------------------------------
+% data file things
+%---------------------------------------------------------------------
+if isempty(datafile)
+	switch os_type
+		case {'PCWIN', 'PCWIN64'}
+			% assume we are using the opto computer (optocom)
+			data_root_path = 'E:\Data\SJS';
+		case {'MAC', 'MACI', 'GLNXA64', 'MACI64'}
+			data_root_path = '/Users/sshanbhag/Work/Data/Mouse/Opto';
+	end
+	% get data file from user
+	[datafile, datapath] = uigetfile('*.dat', 'Select opto data file', ...
+														data_root_path);
+	% abort if cancelled
+	if datafile == 0
+		fprintf('Cancelled\n');
+		return
+	end	
+end
+if isempty(plotpath_base)
+	switch os_type
+		case {'PCWIN', 'PCWIN64'}
+			% assume we are using the opto computer (optocom)
+			data_root_path = 'E:\Data\SJS';
+		case {'MAC', 'MACI', 'GLNXA64', 'MACI64'}
+			data_root_path = '/Users/sshanbhag/Work/Data/Mouse/Opto';
+	end
+	% output path for plots
+	plotpath_base = fullfile(data_root_path, 'Analyzed');
+end
+	
+%---------------------------------------------------------------------
+% Read Data
+%---------------------------------------------------------------------
 [D, Dinf, tracesByStim] = getFilteredOptoData( ...
 											fullfile(datapath, datafile), ...
 											'Filter', [HPFreq LPFreq], ...
@@ -107,7 +169,7 @@ if isempty(D)
 end
 
 %---------------------------------------------------------------------
-%% get info from filename
+% get info from filename
 %---------------------------------------------------------------------
 [~, fname] = fileparts(datafile);
 usc = find(fname == '_');
@@ -129,12 +191,18 @@ if any([saveFIG savePDF savePNG])
 		mkdir(plotpath);
 	end
 end
+
 %---------------------------------------------------------------------
-%% determine global RMS and max
+% determine global RMS and max
 %---------------------------------------------------------------------
 % first, get  # of stimuli (called ntrials by opto) as well as # of reps
-nstim = Dinf.test.stimcache.ntrials;
-nreps = Dinf.test.stimcache.nreps;
+if strcmpi(Dinf.test.Type, 'WavFile')
+	nstim = Dinf.test.nCombinations;
+	nreps = Dinf.test.Reps;
+else
+	nstim = Dinf.test.stimcache.ntrials;
+	nreps = Dinf.test.stimcache.nreps;
+end
 % allocate matrices
 netrmsvals = zeros(nstim, nreps);
 maxvals = zeros(nstim, nreps);
@@ -152,7 +220,7 @@ global_max = max(max(maxvals));
 fprintf('\tGlobal max abs value: %.4f\n', global_max);
 
 %---------------------------------------------------------------------
-%% Some test-specific things...
+% Some test-specific things...
 %---------------------------------------------------------------------
 switch upper(Dinf.test.Type)
 	case 'FREQ'
@@ -199,7 +267,7 @@ switch upper(Dinf.test.Type)
 end
 
 %---------------------------------------------------------------------
-%% find spikes!
+% find spikes!
 %---------------------------------------------------------------------
 Fs = Dinf.indev.Fs;
 spiketimes = cell(nvars, 1);
@@ -211,15 +279,15 @@ for v = 1:nvars
 end
 
 %---------------------------------------------------------------------
-%% Plot raw data
+% Plot raw data
 %---------------------------------------------------------------------
 hF = figure;
 set(hF, 'Name', [fname '_sweeps']);
 
 % determine # of columns of plots
-if nvars <= 5
+if nvars <= 6
 	prows = nvars;
-	pcols = 1;	
+	pcols = 1;
 elseif iseven(nvars)
 	prows = nvars/2;
 	pcols = 2;
@@ -253,10 +321,17 @@ if savePNG
 	print(hF, pname, '-dpng', '-r300');
 end
 %---------------------------------------------------------------------
-%% raster, psths
+% raster, psths
 %---------------------------------------------------------------------
 hPR = figure;
-plotopts.timelimits = [0 ceil(max(t))];
+if isempty(timeLimits)
+	plotopts.timelimits = [0 ceil(max(t))];
+else
+	plotopts.timelimits = timeLimits;
+end
+if ~isempty(yLimits)
+	plotopts.psth_ylimits = yLimits;
+end
 plotopts.raster_tickmarker = '.';
 plotopts.raster_ticksize = 16;
 plotopts.raster_color = [0 0 0];
@@ -266,15 +341,13 @@ plotopts.xlabel = 'msec';
 plotopts.stimulus_times_plot = 3;
 plotopts.stimulus_on_color{1} = [0 0 1];
 plotopts.stimulus_off_color{1} = [0 0 1];
-plotopts.stimulus_onoff_pct(1) = 80;
+plotopts.stimulus_onoff_pct(1) = 60;
 if Dinf.opto.Enable
 	% add colors for second stimulus
 	plotopts.stimulus_on_color{2} = [1 0 0];
 	plotopts.stimulus_off_color{2} = [1 0 0];
-	plotopts.stimulus_onoff_pct(2) = 90;
+	plotopts.stimulus_onoff_pct(2) = 80;
 end
-
-plotopts.psth_ylimits = [0 20];
 
 % create times to indicate stimuli
 stimulus_times = cell(nvars, 1);
@@ -324,5 +397,8 @@ if savePNG
 	print(hPR, pname, '-dpng', '-r300');
 end
 
-
-
+if nargout
+	varargout{1} = D;
+	varargout{2} = Dinf;
+	varargout{3} = plotopts;
+end
