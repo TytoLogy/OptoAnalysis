@@ -105,7 +105,9 @@ fprintf('%s: had %d reps, %d trials\n', datafile, numreps, numtrials);
 %---------------------------------------------------------------------
 % get info from filename
 %---------------------------------------------------------------------
-P.filename = datafile;
+[fpath, fname, fext] = fileparts(datafile);
+P.filepath = fpath; 
+P.filename = [fname fext];
 fname_props = parse_opto_filename(datafile);
 fnames = fieldnames(fname_props);
 for n = 1:length(fnames)
@@ -119,11 +121,6 @@ P.nreps = Dinf.test.stimcache.nreps;
 %---------------------------------------------------------------------
 % test things
 %---------------------------------------------------------------------
-% P.Test = rmfield(Dinf.test, 'stimcache');
-% P.Test.Type = char(Dinf.test.Type);
-% P.Test.Name = char(Dinf.test.Name);
-
-
 P.TestType = char(Dinf.test.Type);
 P.TestName = char(Dinf.test.Name);
 testfields = {'Reps', 'Randomize', 'Block', 'saveStim', ...
@@ -165,7 +162,7 @@ P.oFs = Dinf.outdev.Fs;
 %---------------------------------------------------------------------
 % comment is a place holder
 %---------------------------------------------------------------------
-P.comment = ' ';
+P.comment = 'NaN';
 %---------------------------------------------------------------------
 %---------------------------------------------------------------------
 % assign to outputs

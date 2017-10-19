@@ -31,15 +31,18 @@
 plotpath_base = fullfile(data_root_path, 'Analyzed');
 
 %---------------------------------------------------------------------
-% select data
+% select data directory
 %---------------------------------------------------------------------
 % add animal and datestring if desired
 animal = '1155';
-datestring = '20171006';
-datafile = '1155_20171006_04_03_3123_FREQoptoON_ch5ch11_3.dat';
+datestring = '';
+
 
 % build datapath
 datapath = fullfile(data_root_path, animal, datestring);
+
+datapath = uigetdir(datapath, 'Select data directory');
+
 if isempty(datafile)
 	% get data file from user
 	[datafile, datapath] = uigetfile('*.dat', 'Select opto data file', ...
@@ -52,11 +55,18 @@ if isempty(datafile)
 end
 
 %---------------------------------------------------------------------
-% Read Data
+%% Read Data
 %---------------------------------------------------------------------
 [tabledatum, Dinf] = get_test_properties(fullfile(datapath, datafile));
 
-
+%---------------------------------------------------------------------
+% update comment
+%---------------------------------------------------------------------
+newTxt = uiaskvalue(	'QuestionText', datafile, ...
+							'FigureName', 'Additional comments', ...
+							'ValueType', 'char', ...
+							'Value', '', ...
+							'ValueText', '' );
 
 
 
