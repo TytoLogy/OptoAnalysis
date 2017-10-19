@@ -37,39 +37,56 @@ plotpath_base = fullfile(data_root_path, 'Analyzed');
 animal = '1155';
 datestring = '';
 
-
 % build datapath
 datapath = fullfile(data_root_path, animal, datestring);
 
+% query user for desired directory
 datapath = uigetdir(datapath, 'Select data directory');
 
-if isempty(datafile)
-	% get data file from user
-	[datafile, datapath] = uigetfile('*.dat', 'Select opto data file', ...
-														fullfile(datapath, datafile));
-	% abort if cancelled
-	if datafile == 0
-		fprintf('Cancelled\n');
-		return
-	end
+% abort if cancelled
+if datapath == 0
+	fprintf('Cancelled\n');
+	return
 end
 
 %---------------------------------------------------------------------
+% list files
+%---------------------------------------------------------------------
+dList = dir(fullfile(datapath, '*.dat'));
+
+nfiles = length(dList);
+
+if nfiles == 0
+	error('%s: no .dat files found in directory %s', mfilename, datapath);
+end
+%---------------------------------------------------------------------
 %% Read Data
 %---------------------------------------------------------------------
-[tabledatum, Dinf] = get_test_properties(fullfile(datapath, datafile));
 
-%---------------------------------------------------------------------
-% update comment
-%---------------------------------------------------------------------
-newTxt = uiaskvalue(	'QuestionText', datafile, ...
-							'FigureName', 'Additional comments', ...
-							'ValueType', 'char', ...
-							'Value', '', ...
-							'ValueText', '' );
+P = [];
 
+for f = 1:nfiles
+	datafile = dList(f).name;
+	structdatum = get_test_properties(fullfile(datapath, datafile));
 
+% 	%---------------------------------------------------------------------
+% 	% update comment
+% 	%---------------------------------------------------------------------
+% 	newTxt = uiaskvalue(	'QuestionText', datafile, ...
+% 								'FigureName', 'Additional comments', ...
+% 								'ValueType', 'char', ...
+% 								'Value', '', ...
+% 								'ValueText', '' );
+% 
+% 	if ~isempty(newTxt)
+% 		structdatum.comment = newTxt;
+% 	end
 
+	if f == 1
+		P = structdatum;
+	else
+		P(f) = structdatum;
+	end
 
-
+end
 

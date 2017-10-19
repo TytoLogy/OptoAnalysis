@@ -1,4 +1,4 @@
-function [T, varargout] = get_test_properties(varargin)
+function [P, varargout] = get_test_properties(varargin)
 %--------------------------------------------------------------------------
 % get_test_properties
 %--------------------------------------------------------------------------
@@ -168,14 +168,13 @@ P.comment = 'NaN';
 % assign to outputs
 %---------------------------------------------------------------------
 %---------------------------------------------------------------------
-T = struct2table(P);
 
 if nargout > 1
 	if nargout >= 2
 		varargout{1} = Dinf;
 	end
 	if nargout == 3
-		varargout{2} = P;
+		varargout{2} = struct2table(P);
 	end
 	if nargout > 3
 		error('incorrect outputs');
