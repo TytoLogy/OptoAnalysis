@@ -57,7 +57,6 @@ if datafile == 0
 	return
 end
 
-[~, Dinf] = optoproc('file', fullfile(datapath, datafile), ...
-								'plotpath', plotpath_base, ...
-								'channel', 5, 'binsize', 5, 'savepdf');
+[~, Dinf, S] = optoproc('file', fullfile(datapath, datafile), ...
+								'channel', 5, 'binsize', 5);
 

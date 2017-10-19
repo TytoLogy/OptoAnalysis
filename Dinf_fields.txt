@@ -1,0 +1,75 @@
+---------------------------------------------------------------------
+DataInfo Fields:
+---------------------------------------------------------------------
+
+       filename: 'E:\Data\SJS\1155\20171006\1155_20171006_04_03_3123_FREQop?'
+    startstring: 'HEADER_START'
+     time_start: 7.3697e+05
+           test: [1×1 struct]
+          audio: [1×1 struct]
+           opto: [1×1 struct]
+       channels: [1×1 struct]
+        caldata: [1×1 struct]
+          indev: [1×1 struct]
+         outdev: [1×1 struct]
+      endstring: 'HEADER_END'
+		
+				test:
+						  Type: [70 82 69 81]
+						  Name: [70 82 69 81 111 112 116 111 79 78]
+						  Reps: 10
+					Randomize: 1
+						 Block: 0
+					 saveStim: 0
+				 AcqDuration: 1000
+				 SweepPeriod: 1001
+					  stimseq: [10×13 double]
+					stimcache: [1×1 struct]
+
+
+				audio:
+					signal: [1×1 struct]
+									Type: [116 111 110 101]
+							 Frequency: [1×13 double]
+								RadVary: 1
+					 Delay: 200
+				 Duration: 100
+					 Level: 15
+					  Ramp: 5
+					Frozen: 0
+						ISI: 100
+
+
+				opto:
+
+				 Enable: 1
+				  Delay: 200
+					 Dur: 100
+					 Amp: 1000
+
+				channels:
+						 OutputChannelL: 1
+						 OutputChannelR: 2
+						 nInputChannels: 16
+						  InputChannels: [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16]
+						 OpticalChannel: 10
+						 MonitorChannel: 11
+				 MonitorOutputChannel: 9
+						 RecordChannels: {16×1 cell}
+						nRecordChannels: 2
+					 RecordChannelList: [2×1 double]
+
+				caldata: calibration data struct
+
+				indev, outdev: TDT I/O structs
+	
+
+---------------------------------------------------------------------
+fname_props:
+---------------------------------------------------------------------
+	      animal: '1155'
+       datecode: '20171006'
+    penetration: '04'
+           unit: '03'
+          other: '3'
+

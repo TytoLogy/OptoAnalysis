@@ -45,6 +45,17 @@ switch os_type
 								'/Users/sshanbhag/Work/Code/Matlab/dev/TytoLogy';
 end
 
+%---------------------------------------------------------------------
+% add path to opto - needed for 
+%---------------------------------------------------------------------
+if ~exist('readOptoData.m', 'file')
+	path_to_add = fullfile(tytology_root_path, 'Experiments', 'Opto');
+	fprintf('%s:\n\tAdding\n\t\t%s\n\tto caller path\n', ...
+						mfilename, path_to_add);
+	expr = [	'addpath(''' path_to_add ''')' ];
+	evalin('base', expr);
+end
+
 % %---------------------------------------------------------------------
 % % data file things
 % %---------------------------------------------------------------------

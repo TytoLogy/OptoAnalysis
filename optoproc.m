@@ -29,7 +29,7 @@ function varargout = optoproc(varargin)
 % settings for processing data
 %---------------------------------------------------------------------
 datafile = '';
-plotpath_base = '';
+plotpath_base = ''; %#ok<NASGU>
 % filter
 HPFreq = 350;
 LPFreq = 6500;
@@ -41,9 +41,9 @@ channelNumber = 8;
 % binSize for PSTH (milliseconds)
 binSize = 5;
 % Plot Traces?
-plotTraces = 1;
+plotTraces = 0;
 % plotPSTH?
-plotPSTH = 1;
+plotPSTH = 0;
 % SAVE PLOTS?
 saveFIG = 0;
 savePNG = 0;
@@ -65,7 +65,7 @@ if nargin
 				datafile = [dfile dext];
 				argIndx = argIndx + 2;
 			case 'PLOTPATH'
-				plotpath_base = varargin{argIndx + 1};
+				plotpath_base = varargin{argIndx + 1}; %#ok<NASGU>
 				argIndx = argIndx + 2;
 			case 'HPFREQ'
 				HPFreq = varargin{argIndx + 1};
@@ -112,19 +112,14 @@ end
 %---------------------------------------------------------------------
 % need to get information about system
 %---------------------------------------------------------------------
-optoanalysis_paths;
+[data_root_path, tytology_root_path] = optoanalysis_paths; %#ok<ASGLU>
+% output path for plots
+plotpath_base = fullfile(data_root_path, 'Analyzed');
 
 %---------------------------------------------------------------------
 % data file things
 %---------------------------------------------------------------------
 if isempty(datafile)
-	switch os_type
-		case {'PCWIN', 'PCWIN64'}
-			% assume we are using the opto computer (optocom)
-			data_root_path = 'E:\Data\SJS';
-		case {'MAC', 'MACI', 'GLNXA64', 'MACI64'}
-			data_root_path = '/Users/sshanbhag/Work/Data/Mouse/Opto';
-	end
 	% get data file from user
 	[datafile, datapath] = uigetfile('*.dat', 'Select opto data file', ...
 														data_root_path);
@@ -134,18 +129,7 @@ if isempty(datafile)
 		return
 	end	
 end
-if isempty(plotpath_base)
-	switch os_type
-		case {'PCWIN', 'PCWIN64'}
-			% assume we are using the opto computer (optocom)
-			data_root_path = 'E:\Data\SJS';
-		case {'MAC', 'MACI', 'GLNXA64', 'MACI64'}
-			data_root_path = '/Users/sshanbhag/Work/Data/Mouse/Opto';
-	end
-	% output path for plots
-	plotpath_base = fullfile(data_root_path, 'Analyzed');
-end
-	
+
 %---------------------------------------------------------------------
 % Read Data
 %---------------------------------------------------------------------
@@ -300,15 +284,17 @@ if plotTraces
 		ylabel('Trial')
 	end
 	% save plot
-	pname = fullfile(plotpath, [fname '_traces']); 
-	if saveFIG
-		savefig(hF, pname, 'compact');
-	end
-	if savePDF
-		print(hF, pname, '-dpdf');
-	end
-	if savePNG
-		print(hF, pname, '-dpng', '-r300');
+	if any([saveFIG savePDF savePNG])
+		pname = fullfile(plotpath, [fname '_traces']); 
+		if saveFIG
+			savefig(hF, pname, 'compact');
+		end
+		if savePDF
+			print(hF, pname, '-dpdf');
+		end
+		if savePNG
+			print(hF, pname, '-dpng', '-r300');
+		end
 	end
 end
 
@@ -379,15 +365,17 @@ if plotPSTH
 	set(hPR, 'Name', fname)
 
 	% save plot
-	pname = fullfile(plotpath, [fname '_rp']);
-	if saveFIG
-		savefig(hPR, pname, 'compact');
-	end
-	if savePDF
-		print(hPR, pname, '-dpdf');
-	end
-	if savePNG
-		print(hPR, pname, '-dpng', '-r300');
+	if any([saveFIG savePDF savePNG])
+		pname = fullfile(plotpath, [fname '_rp']);
+		if saveFIG
+			savefig(hPR, pname, 'compact');
+		end
+		if savePDF
+			print(hPR, pname, '-dpdf');
+		end
+		if savePNG
+			print(hPR, pname, '-dpng', '-r300');
+		end
 	end
 end
 
@@ -397,7 +385,9 @@ end
 if nargout
 	varargout{1} = D;
 	varargout{2} = Dinf;
-	varargout{3} = struct('spiketimes', spiketimes, 'mean_rms', mean_rms, ...
+	varargout{3} = struct('spiketimes', {spiketimes}, 'mean_rms', mean_rms, ...
 									'global_max', global_max, 'Threshold', Threshold);
-	varargout{4} = plotopts;
+	if plotPSTH
+		varargout{4} = plotopts;
+	end
 end
