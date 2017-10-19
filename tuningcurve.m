@@ -1,6 +1,4 @@
-function varargout = optoplot(varargin)
-%------------------------------------------------------------------------
-% optoproc
+% tuning curve
 %------------------------------------------------------------------------
 % % TytoLogy:Experiments:opto Application
 %--------------------------------------------------------------------------
@@ -15,15 +13,11 @@ function varargout = optoplot(varargin)
 %  Sharad Shanbhag
 %   sshanbhag@neomed.edu
 %------------------------------------------------------------------------
-% Created: ???
+% Created: 19 Oct 2017
 %
 % Revisions:
 %	see git!
 %------------------------------------------------------------------------
-% TO DO:
-%	- Document
-%	- Functionalize
-%--------------------------------------------------------------------------
 clearvars
 
 %---------------------------------------------------------------------
@@ -39,15 +33,11 @@ Threshold = 3;
 channelNumber = 8;
 % binSize for PSTH (milliseconds)
 binSize = 5;
-% SAVE PLOTS?
-saveFIG = 0;
-savePNG = 0;
-savePDF = 1;
 
 %---------------------------------------------------------------------
 % need to get information about system
 %---------------------------------------------------------------------
-[data_root_path, tytology_root_path] = optoanalysis_paths; %#ok<ASGLU>
+[data_root_path, tytology_root_path] = optoanalysis_paths; 
 % output path for plots
 plotpath_base = fullfile(data_root_path, 'Analyzed');
 	

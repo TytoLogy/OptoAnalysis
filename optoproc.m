@@ -24,8 +24,7 @@ function varargout = optoproc(varargin)
 %	- Document
 %	- Functionalize
 %--------------------------------------------------------------------------
-nargout
-nargin
+
 %---------------------------------------------------------------------
 % settings for processing data
 %---------------------------------------------------------------------
@@ -41,6 +40,10 @@ Threshold = 3;
 channelNumber = 8;
 % binSize for PSTH (milliseconds)
 binSize = 5;
+% Plot Traces?
+plotTraces = 1;
+% plotPSTH?
+plotPSTH = 1;
 % SAVE PLOTS?
 saveFIG = 0;
 savePNG = 0;
@@ -79,6 +82,12 @@ if nargin
 			case 'BINSIZE'
 				binSize = varargin{argIndx + 1};
 				argIndx = argIndx + 2;
+			case 'PLOT_TRACES'
+				plotTraces = 1;
+				argIndx = argIndx + 1;
+			case 'PLOT_PSTH'
+				plotPSTH = 1;
+				argIndx = argIndx + 1;
 			case 'SAVEFIG'
 				saveFIG = 1;
 				argIndx = argIndx + 1;
@@ -103,27 +112,7 @@ end
 %---------------------------------------------------------------------
 % need to get information about system
 %---------------------------------------------------------------------
-if ~exist('username', 'file')
-	warning('Cannot find <username.m> function... assuming mac for os');
-% 	uname = 'sshanbhag';
-	os_type = 'MACI64';
-% 	hname = 'parvati';
-else
-% 	[uname, os_type, hname] = username;
-	[~, os_type, ~] = username;
-end
-% add path to opto directory - needed for reading in data
-if ~exist('readOptoData.m', 'file')
-	switch os_type
-		case {'PCWIN', 'PCWIN64'}
-			% assume we are using the opto computer (optocom)
-			tytology_root_path = 'C:\TytoLogy';
-		case {'MAC', 'MACI', 'GLNXA64', 'MACI64'}
-			tytology_root_path = ...
-									'/Users/sshanbhag/Work/Code/Matlab/dev/TytoLogy';
-	end	
-	addpath(fullfile(tytology_root_path, 'Experiments', 'Opto'));
-end
+optoanalysis_paths;
 
 %---------------------------------------------------------------------
 % data file things
@@ -177,9 +166,9 @@ endusc = usc - 1;
 startusc = usc + 1;
 animal = fname(1:endusc(1));
 datecode = fname(startusc(1):endusc(2));
-penetration = fname(startusc(2):endusc(3));
-unit = fname(startusc(3):endusc(4));
-other = fname(startusc(end):end);
+penetration = fname(startusc(2):endusc(3)); %#ok<NASGU>
+unit = fname(startusc(3):endusc(4)); %#ok<NASGU>
+other = fname(startusc(end):end); %#ok<NASGU>
 
 %---------------------------------------------------------------------
 % create plot output dir
@@ -281,124 +270,134 @@ end
 %---------------------------------------------------------------------
 % Plot raw data
 %---------------------------------------------------------------------
-hF = figure;
-set(hF, 'Name', [fname '_sweeps']);
-
-% determine # of columns of plots
-if nvars <= 6
-	prows = nvars;
-	pcols = 1;
-elseif iseven(nvars)
-	prows = nvars/2;
-	pcols = 2;
-else
-	prows = ceil(nvars/2);
-	pcols = 2;
-end
-
-for v = 1:nvars
-	% time vector for plotting
-	t = (1000/Fs)*((1:length(tracesByStim{v}(:, 1))) - 1);
-	subplot(prows, pcols, v);
-	% flip tracesByStim in order to have sweeps match the raster plots
-	stackplot(t, fliplr(tracesByStim{v}), 'colormode', 'black', ...
-											'ymax', global_max, ...
-											'figure', hF, 'axes', gca);
-	title(titleString{v}, 'Interpreter', 'none');
-   xlabel('ms')
-   ylabel('Trial')
-end
-
-% save plot
-pname = fullfile(plotpath, [fname '_traces']); 
-if saveFIG
-	savefig(hF, pname, 'compact');
-end
-if savePDF
-	print(hF, pname, '-dpdf');
-end
-if savePNG
-	print(hF, pname, '-dpng', '-r300');
-end
-%---------------------------------------------------------------------
-% raster, psths
-%---------------------------------------------------------------------
-hPR = figure;
-if isempty(timeLimits)
-	plotopts.timelimits = [0 ceil(max(t))];
-else
-	plotopts.timelimits = timeLimits;
-end
-if ~isempty(yLimits)
-	plotopts.psth_ylimits = yLimits;
-end
-plotopts.raster_tickmarker = '.';
-plotopts.raster_ticksize = 16;
-plotopts.raster_color = [0 0 0];
-plotopts.psth_binwidth = binSize;
-plotopts.plotgap = 0.001;
-plotopts.xlabel = 'msec';
-plotopts.stimulus_times_plot = 3;
-plotopts.stimulus_on_color{1} = [0 0 1];
-plotopts.stimulus_off_color{1} = [0 0 1];
-plotopts.stimulus_onoff_pct(1) = 60;
-if Dinf.opto.Enable
-	% add colors for second stimulus
-	plotopts.stimulus_on_color{2} = [1 0 0];
-	plotopts.stimulus_off_color{2} = [1 0 0];
-	plotopts.stimulus_onoff_pct(2) = 80;
-end
-
-% create times to indicate stimuli
-stimulus_times = cell(nvars, 1);
-for v = 1:nvars
-	% need to have [stim_onset stim_offset], so add delay to 
-	% [0 duration] to compute proper times. then, multiply by 0.001 to
-	% give times in seconds (Dinf values are in milliseconds)
-	stimulus_times{v, 1} = 0.001 * (Dinf.audio.Delay + ...
-														[0 Dinf.audio.Duration]);
-	% if opto is Enabled, add it to the array by concatenation
-	if Dinf.opto.Enable
-		stimulus_times{v, 1} = [stimulus_times{v, 1}; ...
-											 0.001 * (Dinf.opto.Delay + ...
-														[0 Dinf.opto.Dur]) ];
+if plotTraces
+	% new figure
+	hF = figure;
+	% name figure
+	set(hF, 'Name', [fname '_sweeps']);
+	% determine # of columns of plots
+	if nvars <= 6
+		prows = nvars;
+		pcols = 1;
+	elseif iseven(nvars)
+		prows = nvars/2;
+		pcols = 2;
+	else
+		prows = ceil(nvars/2);
+		pcols = 2;
+	end
+	% loop through variable
+	for v = 1:nvars
+		% time vector for plotting
+		t = (1000/Fs)*((1:length(tracesByStim{v}(:, 1))) - 1);
+		subplot(prows, pcols, v);
+		% flip tracesByStim in order to have sweeps match the raster plots
+		stackplot(t, fliplr(tracesByStim{v}), 'colormode', 'black', ...
+												'ymax', global_max, ...
+												'figure', hF, 'axes', gca);
+		title(titleString{v}, 'Interpreter', 'none');
+		xlabel('ms')
+		ylabel('Trial')
+	end
+	% save plot
+	pname = fullfile(plotpath, [fname '_traces']); 
+	if saveFIG
+		savefig(hF, pname, 'compact');
+	end
+	if savePDF
+		print(hF, pname, '-dpdf');
+	end
+	if savePNG
+		print(hF, pname, '-dpng', '-r300');
 	end
 end
 
-% adjust depending on # of columns of plots
-if nvars <= 5
-	plotopts.plot_titles = titleString;
-	plotopts.stimulus_times = stimulus_times;
-	rasterpsthmatrix(spiketimes, plotopts);
-elseif iseven(nvars)
-	plotopts.plot_titles = reshape(titleString, [prows pcols]);
-	plotopts.stimulus_times = reshape(stimulus_times, [prows pcols]);
-	rasterpsthmatrix(reshape(spiketimes, [prows pcols]), plotopts);
-else
-	% need to add 'dummy' element to arrays
-% 	titleString = [titleString; {''}];
-% 	spiketimes = [spiketimes; {{}}];
-	plotopts.plot_titles = reshape([titleString; {''}], [prows pcols]);
-	plotopts.stimulus_times = reshape([stimulus_times; stimulus_times{end}], [prows pcols]);
-	rasterpsthmatrix(reshape([spiketimes; {{}}], [prows pcols]), plotopts);
-end
-% set plot name
-set(hPR, 'Name', fname)
+%---------------------------------------------------------------------
+% raster, psths
+%---------------------------------------------------------------------
+if plotPSTH
+	hPR = figure;
+	if isempty(timeLimits)
+		plotopts.timelimits = [0 ceil(max(t))];
+	else
+		plotopts.timelimits = timeLimits;
+	end
+	if ~isempty(yLimits)
+		plotopts.psth_ylimits = yLimits;
+	end
+	plotopts.raster_tickmarker = '.';
+	plotopts.raster_ticksize = 16;
+	plotopts.raster_color = [0 0 0];
+	plotopts.psth_binwidth = binSize;
+	plotopts.plotgap = 0.001;
+	plotopts.xlabel = 'msec';
+	plotopts.stimulus_times_plot = 3;
+	plotopts.stimulus_on_color{1} = [0 0 1];
+	plotopts.stimulus_off_color{1} = [0 0 1];
+	plotopts.stimulus_onoff_pct(1) = 60;
+	if Dinf.opto.Enable
+		% add colors for second stimulus
+		plotopts.stimulus_on_color{2} = [1 0 0];
+		plotopts.stimulus_off_color{2} = [1 0 0];
+		plotopts.stimulus_onoff_pct(2) = 80;
+	end
 
-% save plot
-pname = fullfile(plotpath, [fname '_rp']);
-if saveFIG
-	savefig(hPR, pname, 'compact');
-end
-if savePDF
-	print(hPR, pname, '-dpdf');
-end
-if savePNG
-	print(hPR, pname, '-dpng', '-r300');
+	% create times to indicate stimuli
+	stimulus_times = cell(nvars, 1);
+	for v = 1:nvars
+		% need to have [stim_onset stim_offset], so add delay to 
+		% [0 duration] to compute proper times. then, multiply by 0.001 to
+		% give times in seconds (Dinf values are in milliseconds)
+		stimulus_times{v, 1} = 0.001 * (Dinf.audio.Delay + ...
+															[0 Dinf.audio.Duration]);
+		% if opto is Enabled, add it to the array by concatenation
+		if Dinf.opto.Enable
+			stimulus_times{v, 1} = [stimulus_times{v, 1}; ...
+												 0.001 * (Dinf.opto.Delay + ...
+															[0 Dinf.opto.Dur]) ];
+		end
+	end
+
+	% adjust depending on # of columns of plots
+	if nvars <= 5
+		plotopts.plot_titles = titleString;
+		plotopts.stimulus_times = stimulus_times;
+		rasterpsthmatrix(spiketimes, plotopts);
+	elseif iseven(nvars)
+		plotopts.plot_titles = reshape(titleString, [prows pcols]);
+		plotopts.stimulus_times = reshape(stimulus_times, [prows pcols]);
+		rasterpsthmatrix(reshape(spiketimes, [prows pcols]), plotopts);
+	else
+		% need to add 'dummy' element to arrays
+	% 	titleString = [titleString; {''}];
+	% 	spiketimes = [spiketimes; {{}}];
+		plotopts.plot_titles = reshape([titleString; {''}], [prows pcols]);
+		plotopts.stimulus_times = reshape([stimulus_times; stimulus_times{end}], [prows pcols]);
+		rasterpsthmatrix(reshape([spiketimes; {{}}], [prows pcols]), plotopts);
+	end
+	% set plot name
+	set(hPR, 'Name', fname)
+
+	% save plot
+	pname = fullfile(plotpath, [fname '_rp']);
+	if saveFIG
+		savefig(hPR, pname, 'compact');
+	end
+	if savePDF
+		print(hPR, pname, '-dpdf');
+	end
+	if savePNG
+		print(hPR, pname, '-dpng', '-r300');
+	end
 end
 
+%---------------------------------------------------------------------
+% outputs
+%---------------------------------------------------------------------
 if nargout
 	varargout{1} = D;
 	varargout{2} = Dinf;
-	varargout{3} = plotopts;
+	varargout{3} = struct('spiketimes', spiketimes, 'mean_rms', mean_rms, ...
+									'global_max', global_max, 'Threshold', Threshold);
+	varargout{4} = plotopts;
 end
