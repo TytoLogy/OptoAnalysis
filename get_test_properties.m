@@ -116,6 +116,16 @@ end
 %---------------------------------------------------------------------
 % get  # of stimuli (called ntrials by opto) as well as # of reps
 %---------------------------------------------------------------------
+%*** need to trap out lack of stimcache.... see readOptoData... eg
+% % % % check if stimcache exists
+% % % if isfield(datainfo.test, 'stimcache')
+% % % 	% if so, get # of reps and trials from size of trialRandomSequence
+% % % 	[numreps, numtrials] = size(datainfo.test.stimcache.trialRandomSequence);
+% % % else
+% % % 	% otherwise, compute from Reps and nCombinations
+% % % 	numreps = datainfo.test.Reps;
+% % % 	numtrials = datainfo.test.nCombinations;
+% % % end
 P.nstim = Dinf.test.stimcache.ntrials;
 P.nreps = Dinf.test.stimcache.nreps;
 %---------------------------------------------------------------------
