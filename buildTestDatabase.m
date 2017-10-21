@@ -33,10 +33,6 @@ plotpath_base = fullfile(data_root_path, 'Analyzed');
 %---------------------------------------------------------------------
 % select data directory
 %---------------------------------------------------------------------
-% add animal and datestring if desired
-animal = '1155';
-datestring = '';
-
 % build datapath
 datapath = fullfile(data_root_path, animal, datestring);
 
@@ -50,25 +46,20 @@ if datapath == 0
 end
 
 %---------------------------------------------------------------------
-% list files
+% get list of files
 %---------------------------------------------------------------------
 dList = dir(fullfile(datapath, '*.dat'));
-
 nfiles = length(dList);
-
 if nfiles == 0
 	error('%s: no .dat files found in directory %s', mfilename, datapath);
 end
 %---------------------------------------------------------------------
-%% Read Data
+% Read Data
 %---------------------------------------------------------------------
-
 P = [];
-
 for f = 1:nfiles
 	datafile = dList(f).name;
 	structdatum = get_test_properties(fullfile(datapath, datafile));
-
 % 	%---------------------------------------------------------------------
 % 	% update comment
 % 	%---------------------------------------------------------------------
@@ -81,12 +72,32 @@ for f = 1:nfiles
 % 	if ~isempty(newTxt)
 % 		structdatum.comment = newTxt;
 % 	end
-
 	if f == 1
 		P = structdatum;
 	else
-		P(f) = structdatum;
+		P(f) = structdatum; %#ok<SAGROW>
 	end
-
 end
+
+%---------------------------------------------------------------------
+% Save Data
+%---------------------------------------------------------------------
+% find location(s) of file separators in datapath
+sloc = find(datapath == filesep);
+% chars after last filesep should be date
+datestr = datapath( (sloc(end) + 1):end );
+% chars between next to last filesep and last filesep are animal
+animalstr = datapath( (sloc(end-1) + 1):(sloc(end)-1) );
+% build proposed file name
+dfile = fullfile(datarootpath, 'Analyzed', [animalstr '_' datestr '_db.mat']);
+
+[dfile, fpath] = uiputfile('*.mat', 'Save test properties to', dfile);
+
+if dfile == 0
+	return
+else
+	save(dfile, 'P', '-MAT');
+end
+
+
 

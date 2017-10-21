@@ -29,7 +29,6 @@ function [P, varargout] = get_test_properties(varargin)
 %---------------------------------------------------------------------
 %---------------------------------------------------------------------
 datafile = [];
-T = [];
 
 %---------------------------------------------------------------------
 %---------------------------------------------------------------------
@@ -79,6 +78,22 @@ catch errMsg
 	return;
 end
 fclose(fp);
+
+%--------------------------------------------------------------------------
+% get stimulus information
+%--------------------------------------------------------------------------
+% build wavinfo_matfile name
+[datapath, basename] = fileparts(datafile);
+wavinfo_matfile = fullfile(datapath, [basename '_wavinfo.mat']);
+% check if wavinfo exists
+if exist(wavinfo_matfile, 'file')
+	fprintf('Loading stimList from %s\n', wavinfo_matfile);
+	load(wavinfo_matfile, 'stimList');
+	Dinf.stimList = stimList;
+else
+	Dinf.stimList = [];
+end
+
 %---------------------------------------------------------------------
 % check if stimcache exists
 %---------------------------------------------------------------------
@@ -95,6 +110,9 @@ else
 	numtrials = Dinf.test.nCombinations;
 end
 fprintf('%s: had %d reps, %d trials\n', datafile, numreps, numtrials);
+
+% correct Dinf test type
+Dinf = correctTestType(Dinf);
 
 %---------------------------------------------------------------------
 %---------------------------------------------------------------------
@@ -113,32 +131,42 @@ fnames = fieldnames(fname_props);
 for n = 1:length(fnames)
 	P.(fnames{n}) = fname_props.(fnames{n});
 end
-%---------------------------------------------------------------------
-% get  # of stimuli (called ntrials by opto) as well as # of reps
-%---------------------------------------------------------------------
-%*** need to trap out lack of stimcache.... see readOptoData... eg
-% % % % check if stimcache exists
-% % % if isfield(datainfo.test, 'stimcache')
-% % % 	% if so, get # of reps and trials from size of trialRandomSequence
-% % % 	[numreps, numtrials] = size(datainfo.test.stimcache.trialRandomSequence);
-% % % else
-% % % 	% otherwise, compute from Reps and nCombinations
-% % % 	numreps = datainfo.test.Reps;
-% % % 	numtrials = datainfo.test.nCombinations;
-% % % end
-P.nstim = Dinf.test.stimcache.ntrials;
-P.nreps = Dinf.test.stimcache.nreps;
+
 %---------------------------------------------------------------------
 % test things
 %---------------------------------------------------------------------
-P.TestType = char(Dinf.test.Type);
+P.nstim = numtrials;
+P.nreps = numreps;
+% not all tests have Type as field (e.g., standalone OptoInhibxxx),
+% so check that it is present
+if isfield(Dinf.test, 'Type')
+	P.TestType = char(Dinf.test.Type);
+else
+	% if not, just use the test name
+	P.TestType = char(Dinf.test.Name);
+end
 P.TestName = char(Dinf.test.Name);
 testfields = {'Reps', 'Randomize', 'Block', 'saveStim', ...
 					'AcqDuration', 'SweepPeriod'};
 for n = 1:length(testfields)
-	P.(testfields{n}) = Dinf.test.(testfields{n});
+	if isfield(Dinf.test, testfields{n})
+		P.(testfields{n}) = Dinf.test.(testfields{n});
+	else
+		P.(testfields{n}) = [];
+	end
 end
-P.stimseq = reshape(Dinf.test.stimseq', [1, numel(Dinf.test.stimseq)]);
+if isfield(Dinf.test, 'stimseq')
+	P.stimseq = reshape(Dinf.test.stimseq', [1, numel(Dinf.test.stimseq)]);
+elseif isfield(Dinf.test, 'stimIndices')
+	if isfield(Dinf, 'stimList')
+		P.stimseq = {Dinf.stimList, force_row(Dinf.test.stimIndices)};
+	else
+		P.stimseq = force_row(Dinf.test.stimIndices);
+	end
+else
+	disp('cannot find stimulus sequence');
+	P.stimseq = [];
+end
 %---------------------------------------------------------------------
 % audio
 %---------------------------------------------------------------------
