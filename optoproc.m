@@ -82,10 +82,10 @@ if nargin
 			case 'BINSIZE'
 				binSize = varargin{argIndx + 1};
 				argIndx = argIndx + 2;
-			case 'PLOT_TRACES'
+			case {'PLOT_TRACES', 'PLOTTRACES'}
 				plotTraces = 1;
 				argIndx = argIndx + 1;
-			case 'PLOT_PSTH'
+			case {'PLOT_PSTH', 'PLOTPSTH'}
 				plotPSTH = 1;
 				argIndx = argIndx + 1;
 			case 'SAVEFIG'
@@ -252,6 +252,20 @@ for v = 1:nvars
 end
 
 %---------------------------------------------------------------------
+% determine # of columns of plots
+%---------------------------------------------------------------------
+if nvars <= 6
+	prows = nvars;
+	pcols = 1;
+elseif iseven(nvars)
+	prows = nvars/2;
+	pcols = 2;
+else
+	prows = ceil(nvars/2);
+	pcols = 2;
+end
+	
+%---------------------------------------------------------------------
 % Plot raw data
 %---------------------------------------------------------------------
 if plotTraces
@@ -259,17 +273,6 @@ if plotTraces
 	hF = figure;
 	% name figure
 	set(hF, 'Name', [fname '_sweeps']);
-	% determine # of columns of plots
-	if nvars <= 6
-		prows = nvars;
-		pcols = 1;
-	elseif iseven(nvars)
-		prows = nvars/2;
-		pcols = 2;
-	else
-		prows = ceil(nvars/2);
-		pcols = 2;
-	end
 	% loop through variable
 	for v = 1:nvars
 		% time vector for plotting
@@ -304,6 +307,8 @@ end
 if plotPSTH
 	hPR = figure;
 	if isempty(timeLimits)
+		% time vector for plotting
+		t = (1000/Fs)*((1:length(tracesByStim{1}(:, 1))) - 1);
 		plotopts.timelimits = [0 ceil(max(t))];
 	else
 		plotopts.timelimits = timeLimits;

@@ -46,16 +46,17 @@ end
 %---------------------------------------------------------------------
 T = table();
 
+Pnet = [];
+
+% first construct net P struct array
 for f = 1:nfiles
+	tmp = [];
 	datafile = dList(f).name;
 	load(fullfile(dbpath, datafile) , 'P', '-MAT');
-	tmp = struct2table(P);
-	tmp2 = table();
-	for k = 1:length(fields_to_keep)
-		tmp2.(fields_to_keep{k}) = tmp.(fields_to_keep{k});
+	for r = 1:length(P)
+		for p = 1:length(fields_to_keep)
+			tmp(r).(fields_to_keep{p}) = P(r).(fields_to_keep{p});
+		end
 	end
-	T = [T; tmp2];
+	Pnet = [Pnet tmp];
 end
-
-
-
