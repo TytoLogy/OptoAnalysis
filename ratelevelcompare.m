@@ -1,31 +1,6 @@
 %---------------------------------------------------------------------
 %---------------------------------------------------------------------
-% animal id 
-animalID = '1155';
-% date code (helps locate files in data directory)
-dateID = '20171004';
-
-% files to compare
-file1 = '1155_20171004_01_01_2563_BBN_LEVEL.dat';
-file2 = '1155_20171004_01_01_2563_BBN_LEVEL_optoON.dat';
-
-%---------------------------------------------------------------------
-% settings for processing data
-%---------------------------------------------------------------------
-% filter
-HPFreq = 350;
-LPFreq = 6500;
-% RMS spike threshold
-% Threshold = 4.5;
-Threshold = 3;
-% Channel Number (use 8 for single channel data)
-channelNumber = 8;
-% binSize for PSTH (milliseconds)
-binSize = 5;
-% SAVE PLOTS?
-saveFIG = 0;
-savePNG = 0;
-savePDF = 1;
+RLFcomparesettings
 
 %---------------------------------------------------------------------
 %% set paths to things:
@@ -55,9 +30,7 @@ datapath = fullfile(data_root_path, animalID, dateID);
 %---------------------------------------------------------------------
 %% construct rate-level function
 %---------------------------------------------------------------------
-% time window (post-stimulus onset) for analysis
-WindowLen = 25;
-AnalysisWindow = Dinf1.audio.Delay + [0 WindowLen];
+AnalysisWindow = Dinf1.audio.Delay + WindowLen;
 
 rlf1 = computeRLF(S1.spiketimes, AnalysisWindow);
 rlf2 = computeRLF(S2.spiketimes, AnalysisWindow);
@@ -69,7 +42,7 @@ hold on
 hold off
 
 xlabel('dB SPL');
-ylabel('mean spikes/trial')
+ylabel('mean spikes/trial +/- s.d.')
 title({file1, file2}, 'Interpreter', 'none')
 legend({'ctrl', 'optoOn'})
 
