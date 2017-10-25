@@ -50,6 +50,8 @@ savePNG = 0;
 savePDF = 0;
 timeLimits = [];
 yLimits = [];
+% plot file name
+plotFileName = '';
 
 %---------------------------------------------------------------------
 % Parse inputs
@@ -103,6 +105,10 @@ if nargin
 			case 'YLIMITS'
 				yLimits = 1;
 				argIndx = argIndx + 1;
+			case {'PLOT_FILENAME', 'PLOTFILENAME', 'PLOTFILE', 'PLOT_FILE'}
+				plotFileName = varargin{argIndx + 1};
+				argIndx = argIndx + 2;
+				
 			otherwise
 				error('%s: unknown input arg %s', mfilename, varargin{argIndx});
 		end
@@ -153,6 +159,10 @@ datecode = fname(startusc(1):endusc(2));
 penetration = fname(startusc(2):endusc(3)); %#ok<NASGU>
 unit = fname(startusc(3):endusc(4)); %#ok<NASGU>
 other = fname(startusc(end):end); %#ok<NASGU>
+
+if isempty(plotFileName)
+	plotFileName = fname;
+end
 
 %---------------------------------------------------------------------
 % create plot output dir
@@ -288,7 +298,7 @@ if plotTraces
 	end
 	% save plot
 	if any([saveFIG savePDF savePNG])
-		pname = fullfile(plotpath, [fname '_traces']); 
+		pname = fullfile(plotpath, [plotFileName '_traces']); 
 		if saveFIG
 			savefig(hF, pname, 'compact');
 		end
@@ -367,11 +377,11 @@ if plotPSTH
 		rasterpsthmatrix(reshape([spiketimes; {{}}], [prows pcols]), plotopts);
 	end
 	% set plot name
-	set(hPR, 'Name', fname)
+	set(hPR, 'Name', plotFileName)
 
 	% save plot
 	if any([saveFIG savePDF savePNG])
-		pname = fullfile(plotpath, [fname '_rp']);
+		pname = fullfile(plotpath, [plotFileName '_rp']);
 		if saveFIG
 			savefig(hPR, pname, 'compact');
 		end

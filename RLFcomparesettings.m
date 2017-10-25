@@ -26,8 +26,11 @@ animalID = '1155';
 % date code (helps locate files in data directory)
 dateID = '20171006';
 % files to compare
-file1 = '1155_20171006_03_03_2988_BBN_optoOFF_ch5.dat';
-file2 = '1155_20171006_03_03_2988_BBN_optoON_ch5.dat';
+% file1 = '1155_20171006_03_03_2988_BBN_optoOFF_ch5.dat';
+% file2 = '1155_20171006_03_03_2988_BBN_optoON_ch5.dat';
+file1 = '1155_20171006_04_03_3123_BBN_optoOFF_ch5ch11.dat';
+file2 = '1155_20171006_04_03_3123_BBN_optoON_ch5ch11_9.dat';
+
 % Channel Number (use 8 for single channel data)
 channelNumber = 5;
 
