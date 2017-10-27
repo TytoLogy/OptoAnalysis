@@ -6,65 +6,108 @@ animalID = '1155';
 % date code (helps locate files in data directory)
 dateID = '20171025';
 % unit #
-unit = '05';
+unit = '02';
 % penetration
-penetration = '03';
+penetration = '02';
 % recording depth
-depth = '2616';
+depth = '2397';
 % channel
 channelNumber = 8;
 
-% files
-'1155_20171025_05_03_2616_BBN.dat';					% rate level function BBN 0:10:70
-'1155_20171025_05_03_2616_BBN_optoON.dat';		% rlf, opto on, 3500 mV
-
 % for all files:
-% 	acq duration = 500 ms, ISI = 250 ms
+% 	acq duration = 600 ms, ISI = 250 ms
 % 	20 reps
 % 	sound:
-% 		noise, BW:[4kHz 80kHz], 0:10:70dB, 100ms delay, 100ms duration, 5ms ramp
+% 		noise, BW:[4kHz 80kHz], 0:10:60dB, 100ms delay, 150ms duration, 5ms ramp
 % 	opto: 
-% 		200 ms duration, 50 ms delay, varied command voltage to ThorLabs LED
+% 		200 ms duration, 100 ms delay, varied command voltage to ThorLabs LED
 optoRLF.files = {	...
-	'1155_20171025_05_03_2616_BBN_2.dat', ...				% rlf, 0:10:70
-	'1155_20171025_05_03_2616_BBN_optoON_2.dat', ...	% rlf, 0:10:70, opto 3500 mV
-	'1155_20171025_05_03_2616_BBN_optoON_3.dat', ...	% rlf, 0:10:70, opto 100 mV
-	'1155_20171025_05_03_2616_BBN_optoON_4.dat', ...	% rlf, 0:10:70, opto 500 mV
-	'1155_20171025_05_03_2616_BBN_optoON_5.dat', ...	% rlf, 0:10:70, opto 1000 mV
-	'1155_20171025_05_03_2616_BBN_optoON_6.dat', ...	% rlf, 0:10:70, opto 750 mV
-	'1155_20171025_05_03_2616_BBN_optoON_7.dat'  ...	% rlf, 0:10:70, opto 1500 mV
+	'1155_20171025_02_02_2397_BBN.dat', ...					% rlf, 0:10:70
+	'1155_20171025_02_02_2397_BBN_optoON.dat', ...			% rlf, 0:10:70, opto 3500 mV
+	'1155_20171025_02_02_2397_BBN_optoON_2.dat', ...		% rlf, 0:10:70, opto 500 mV
+	'1155_20171025_02_02_2397_BBN_optoON_3.dat', ...		% rlf, 0:10:70, opto 250 mV
+	'1155_20171025_02_02_2397_BBN_optoON_4.dat', ...		% rlf, 0:10:70, opto 750 mV
+	'1155_20171025_02_02_2397_BBN_optoON_5.dat', ...		% rlf, 0:10:70, opto 1000 mV
+	'1155_20171025_02_02_2397_BBN_optoON_6.dat', ...		% rlf, 0:10:70, opto 1500 mV
+	'1155_20171025_02_02_2397_BBN_optoON_7.dat', ...		% rlf, 0:10:70, opto 2000 mV
+	'1155_20171025_02_02_2397_BBN_optoON_8.dat', ...		% rlf, 0:10:70, opto 2500 mV
+	'1155_20171025_02_02_2397_BBN_optoON_9.dat' ...			% rlf, 0:10:70, opto 3000 mV
 };
 optoRLF.LEDintensity = [ ...
-	0, ...
-	3500, ...
-	100, ...
-	500, ...
-	1000, ...
-	750, ...
-	1500 ...
+		0, ...
+		3500, ...
+		500, ...
+		250, ...
+		750, ...
+		1000, ...
+		1500, ...
+		2000, ...
+		2500, ...
+		3000 ...
 ];
+
+bbnRLF.files = '1155_20171025_02_02_2397_BBN_3.dat';	% rlf, 0:10:60
+
+bbn.files = '1155_20171025_02_02_2397_BBN_4.dat';	% BBN, 60 dB, 15 reps
+
 
 % sliding "pulse" of opto stimulation
 % for all files:
-% 	acq duration = 500 ms, ISI = 250 ms
-% 	20 reps
+% 	acq duration = 600 ms, ISI = 250 ms
+% 	15 reps
 % 	sound:
-% 		noise, BW:[4kHz 80kHz], [0 40 60] dB, 100ms delay, 100ms duration, 5ms ramp
+% 		noise, BW:[4kHz 80kHz], [0 30 60] dB, 150ms delay, 100ms duration, 5ms ramp
 % 	opto: 
-% 		25 ms duration, delay varied, 3000 mV command voltage to ThorLabs LED
-optoSlidingWin_files = {	...
-	'1155_20171025_05_03_2616_BBN_3.dat', ...				% sliding opto, control, BBN [0,40,60]dB; 
-	'1155_20171025_05_03_2616_BBN_optoON_9.dat', ...	% opto: 50 ms delay, 3000 mV, 25ms dur
-	'1155_20171025_05_03_2616_BBN_optoON_10.dat', ...	% opto: 100 ms delay, 3000 mV, 25ms dur
-	'1155_20171025_05_03_2616_BBN_optoON_11.dat', ...	% opto: 150 ms delay, 3000 mV, 25ms dur
-	'1155_20171025_05_03_2616_BBN_optoON_12.dat'  ...	% opto: 200 ms delay, 3000 mV, 25ms dur
+% 		50 ms duration, delay varied, 2000 mV command voltage to ThorLabs LED
+optoSlidingWin2K.files = {	...
+	'1155_20171025_02_02_2397_BBN_5.dat', ...				% no opto
+	'1155_20171025_02_02_2397_BBN_optoON_10.dat', ...	% opto: 50 ms delay, 2000 mV, 50ms dur
+	'1155_20171025_02_02_2397_BBN_optoON_11.dat', ...	% opto: 100 ms delay, 2000 mV, 50ms dur
+	'1155_20171025_02_02_2397_BBN_optoON_12.dat', ...	% opto: 150 ms delay, 2000 mV, 50ms dur
+	'1155_20171025_02_02_2397_BBN_optoON_13.dat', ...	% opto: 175 ms delay, 2000 mV, 50ms dur
+	'1155_20171025_02_02_2397_BBN_optoON_14.dat', ...	% opto: 200 ms delay, 2000 mV, 50ms dur
+	'1155_20171025_02_02_2397_BBN_optoON_15.dat', ...	% opto: 250 ms delay, 2000 mV, 50ms dur
+	'1155_20171025_02_02_2397_BBN_optoON_16.dat' ...	% opto: 300 ms delay, 2000 mV, 50ms dur
 };
 
-misc_files = { ...
-	'1155_20171025_05_03_2616_BBN_optoON_13.dat', ...	% opto: 50 ms delay, 3000 mV, 50ms dur
-	'1155_20171025_05_03_2616_BBN_optoON_14.dat', ...	% opto: 100 ms delay, 3000 mV, 50ms dur
-	'1155_20171025_05_03_2616_BBN_optoON_15.dat' ...	% opto: 150 ms delay, 3000 mV, 50ms dur
+optoSlidingWin3K.files = {	...
+	'1155_20171025_02_02_2397_BBN_optoON_17.dat', ...	% opto: 100 ms delay, 3000 mV, 50ms dur
+	'1155_20171025_02_02_2397_BBN_optoON_18.dat', ...	% opto: 150 ms delay, 2000 mV, 50ms dur
+	'1155_20171025_02_02_2397_BBN_optoON_19.dat', ...	% opto: 200 ms delay, 2000 mV, 50ms dur
+	'1155_20171025_02_02_2397_BBN_optoON_20.dat' ...	% opto: 250 ms delay, 2000 mV, 50ms dur
 };
+
+
+% 	acq duration = 400 ms, ISI = 100 ms
+% 	15 reps
+% 	sound:
+% 		tone, freq:5k:5k:80k, 35dB, 100ms delay, 100ms duration, 5ms ramp
+freqtuning.files = 	'1155_20171025_02_02_2397_FREQ_TUNING.dat';
+
+% for all files:
+% 	acq duration = 600 ms, ISI = 300 ms
+% 	15 reps
+% 	sound:
+% 		tone, freq:5k:1250:25k, 35dB, 150ms delay, 100ms duration, 5ms ramp
+% 	opto: 
+% 		200 ms duration, 100 ms delay, varied command voltage to ThorLabs LED
+optoFreqTuning.files = { ...
+	'1155_20171025_02_02_2397_FREQ.dat', ...				% freq,5k:1250:25k opto 0 mV
+	'1155_20171025_02_02_2397_FREQ_optoON.dat', ...		% freq, opto 3000 mV
+	'1155_20171025_02_02_2397_FREQ_optoON_2.dat', ...	% freq, opto 500 mV
+	'1155_20171025_02_02_2397_FREQ_optoON_3.dat', ...	% freq, opto 1000 mV
+	'1155_20171025_02_02_2397_FREQ_optoON_4.dat' ...	% freq, opto 1500 mV
+};
+
+% for all files:
+% 	20 reps
+% 	opto: 
+% 		250 ms duration, 150 ms delay, 3000 mV to ThorLabs LED
+optoWav.files = {	...
+	'1155_20171025_02_02_2397_OptoInhibOFF.dat', ...
+	'1155_20171025_02_02_2397_OptoInhibON.dat' ...
+};
+
 
 %---------------------------------------------------------------------
 % set paths to things:
@@ -85,7 +128,7 @@ datapath = fullfile(data_root_path, animalID, dateID);
 % get indices to sort by intensity
 [sortedIntensity, sortedIndices] = sort(optoRLF.LEDintensity);
 % data window (absolute time re: sweep onset)
-AnalysisWindow = [100 200];
+AnalysisWindow = [150 200];
 % psth bin size
 binSize = 5;
 % threshold (RMS)
@@ -121,7 +164,7 @@ for f = 1:nfiles
 					optoproc('file', fullfile(datapath, RLFdata(f).datafile), ...
 								'channel', channelNumber, ...
 								'binsize', binSize, ...
-								'Threshold', spikeThreshold);
+								'Threshold', spikeThreshold, 'plotpsth', 'savepdf');
 	% compute RLF
 	RLFdata(f).F = computeRLF(RLFdata(f).S.spiketimes, AnalysisWindow);
 	RLFdata(f).F.nlevels = length(RLFdata(f).Dinf.audio.Level);
@@ -183,12 +226,11 @@ end
 legend(legend_str)
 
 %---------------------------------------------------------------------
-%% plot RLF of 0, 500, 1000, 1500, 3500
+%% plot RLF of [0,250,500,750,1000,1500,2000,2500,3000]
 %---------------------------------------------------------------------
 figure;
-
-for f = [1 3 5 6 7]
-
+findx = [1 2 3 4 5 6 7 8 9];
+for f = findx
 	rlf = RLFdata(f).F;
 	opto_mV = RLFdata(f).LEDintensity;
 
@@ -208,4 +250,18 @@ for f = [1 3 5 6 7]
 	legend_str{f} = sprintf('%d mV', RLFdata(f).LEDintensity);
 end
 
-legend(legend_str([1 3 5 6 7]))
+legend(legend_str(findx));
+
+
+%---------------------------------------------------------------------
+%% plot sliding window, 2000 mV data
+%---------------------------------------------------------------------
+% loop through files in sorted order
+for f = 1:length(optoSlidingWin2K.files)
+	fprintf('plotting %s\n', optoSlidingWin2K.files{f});
+	optoproc('file', fullfile(datapath, optoSlidingWin2K.files{f}), ...
+								'channel', channelNumber, ...
+								'binsize', binSize, ...
+								'Threshold', spikeThreshold, 'plotpsth', 'savepdf');
+end
+
