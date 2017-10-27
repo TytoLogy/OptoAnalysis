@@ -231,7 +231,7 @@ for s = 1:nstim
 	netrmsvals(s, :) = rms(tracesByStim{s});
 	maxvals(s, :) = max(abs(tracesByStim{s}));
 end
-% compute overall mean rms fir threshold
+% compute overall mean rms for threshold
 fprintf('Calculating mean and max RMS for data...\n');
 mean_rms = mean(reshape(netrmsvals, numel(netrmsvals), 1));
 fprintf('\tMean rms: %.4f\n', mean_rms);
@@ -292,7 +292,9 @@ end
 Fs = Dinf.indev.Fs;
 spiketimes = cell(nvars, 1);
 for v = 1:nvars
+	% use rms threshold to find spikes
 	spiketimes{v} = spikeschmitt2(tracesByStim{v}', Threshold*mean_rms, 1, Fs);
+	% convert spike times in seconds to milliseconds
 	for r = 1:length(spiketimes{v})
 		spiketimes{v}{r} = (1000/Fs)*spiketimes{v}{r};
 	end
@@ -443,7 +445,8 @@ if nargout
 	varargout{2} = Dinf;
 	varargout{3} = struct('spiketimes', {spiketimes}, 'mean_rms', mean_rms, ...
 									'global_max', global_max, 'Threshold', Threshold);
+	varargout{4} = tracesByStim;
 	if plotPSTH
-		varargout{4} = plotopts;
+		varargout{5} = plotopts;
 	end
 end
