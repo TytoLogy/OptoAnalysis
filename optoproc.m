@@ -52,6 +52,10 @@ timeLimits = [];
 yLimits = [];
 % plot file name
 plotFileName = '';
+% plot rows/cols
+autoRowCols = 1;
+prows = [];
+pcols = [];
 
 %---------------------------------------------------------------------
 % Parse inputs
@@ -119,12 +123,29 @@ if nargin
 				timeLimits = 1;
 				argIndx = argIndx + 1;
 			case 'YLIMITS'
-				yLimits = 1;
-				argIndx = argIndx + 1;
+				yLimits = varargin{argIndx + 1};
+				if numel(yLimits) ~= 2
+					error('%s: yLimits must be 2 element numerical vector', ...
+												mfilename);
+				end
+				argIndx = argIndx + 2;
 			case {'PLOT_FILENAME', 'PLOTFILENAME', 'PLOTFILE', 'PLOT_FILE'}
 				plotFileName = varargin{argIndx + 1};
 				argIndx = argIndx + 2;
-				
+			case {'PLOTROWCOLS'}
+				autoRowCols = 0;
+				tmp = varargin{argIndx + 1};
+				if isnumeric(tmp)
+					if length(tmp) == 2
+						prows = tmp(1);
+						pcols = tmp(2);
+					else
+						error('%s: need to provide [plot_rows plot_cols]', mfilename);
+					end
+				else
+					error('%s: invalid argument to plotRowsCols %s', tmp);
+				end
+				argIndx = argIndx + 2;
 			otherwise
 				error('%s: unknown input arg %s', mfilename, varargin{argIndx});
 		end
@@ -280,17 +301,19 @@ end
 %---------------------------------------------------------------------
 % determine # of columns of plots
 %---------------------------------------------------------------------
-if nvars <= 6
-	prows = nvars;
-	pcols = 1;
-elseif iseven(nvars)
-	prows = nvars/2;
-	pcols = 2;
-else
-	prows = ceil(nvars/2);
-	pcols = 2;
+if autoRowCols
+	if nvars <= 6
+		prows = nvars;
+		pcols = 1;
+	elseif iseven(nvars)
+		prows = nvars/2;
+		pcols = 2;
+	else
+		prows = ceil(nvars/2);
+		pcols = 2;
+	end
 end
-	
+
 %---------------------------------------------------------------------
 % Plot raw data
 %---------------------------------------------------------------------
