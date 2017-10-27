@@ -76,7 +76,23 @@ if nargin
 				LPFreq = varargin{argIndx + 1};
 				argIndx = argIndx + 2;
 			case 'THRESHOLD'
-				Threshold = varargin{argIndx + 1};
+				tmp = varargin{argIndx + 1};
+				if ischar(tmp)
+					if strcmpi(tmp, 'DEFAULT')
+						fprintf('%s: using default threshold: %d\n', ...
+															mfilename, Threshold);
+					else
+						error('%s: unknown threshold command: %s', mfilename, tmp);
+					end
+				elseif isnumeric(tmp)
+					if tmp > 0
+						Threshold = tmp;
+					else
+						error('%s: invalid threshold value: %.4f', mfilename, tmp)
+					end
+				else
+					error('%s: invalid threshold value: %s', mfilename, tmp)
+				end
 				argIndx = argIndx + 2;
 			case 'CHANNEL'
 				channelNumber = varargin{argIndx + 1};
@@ -373,7 +389,9 @@ if plotPSTH
 	% 	titleString = [titleString; {''}];
 	% 	spiketimes = [spiketimes; {{}}];
 		plotopts.plot_titles = reshape([titleString; {''}], [prows pcols]);
-		plotopts.stimulus_times = reshape([stimulus_times; stimulus_times{end}], [prows pcols]);
+		plotopts.stimulus_times = ...
+							reshape(	[stimulus_times; stimulus_times{end}], ...
+										[prows pcols]);
 		rasterpsthmatrix(reshape([spiketimes; {{}}], [prows pcols]), plotopts);
 	end
 	% set plot name

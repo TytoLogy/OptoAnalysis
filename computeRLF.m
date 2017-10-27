@@ -9,6 +9,9 @@ nLevels = length(spikeTimes);
 spikeCount = cell(nLevels, 1);
 rlf.mean = zeros(nLevels, 1);
 rlf.std = zeros(nLevels, 1);
+rlf.mean_ci = cell(nLevels, 1);
+rlf.median = zeros(nLevels, 1);
+rlf.median_ci = cell(nLevels, 1);
 
 for n = 1:nLevels
 	nReps = length(spikeTimes{n});
@@ -18,7 +21,10 @@ for n = 1:nLevels
 																analysisWindow(2) ) );
 	end
 	rlf.mean(n) = mean(spikeCount{n}); 
-	rlf.std(n) = std(spikeCount{n}); 
+	rlf.std(n) = std(spikeCount{n});
+	rlf.mean_ci{n} = bootci(2000, @mean, spikeCount{n});
+	rlf.median(n) = median(spikeCount{n});
+	rlf.median_ci{n} = bootci(2000, @median, spikeCount{n});
 end
 
 
