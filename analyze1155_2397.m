@@ -22,16 +22,16 @@ channelNumber = 8;
 % 	opto: 
 % 		200 ms duration, 100 ms delay, varied command voltage to ThorLabs LED
 optoRLF.files = {	...
-	'1155_20171025_02_02_2397_BBN.dat', ...					% rlf, 0:10:70
-	'1155_20171025_02_02_2397_BBN_optoON.dat', ...			% rlf, 0:10:70, opto 3500 mV
-	'1155_20171025_02_02_2397_BBN_optoON_2.dat', ...		% rlf, 0:10:70, opto 500 mV
-	'1155_20171025_02_02_2397_BBN_optoON_3.dat', ...		% rlf, 0:10:70, opto 250 mV
-	'1155_20171025_02_02_2397_BBN_optoON_4.dat', ...		% rlf, 0:10:70, opto 750 mV
-	'1155_20171025_02_02_2397_BBN_optoON_5.dat', ...		% rlf, 0:10:70, opto 1000 mV
-	'1155_20171025_02_02_2397_BBN_optoON_6.dat', ...		% rlf, 0:10:70, opto 1500 mV
-	'1155_20171025_02_02_2397_BBN_optoON_7.dat', ...		% rlf, 0:10:70, opto 2000 mV
-	'1155_20171025_02_02_2397_BBN_optoON_8.dat', ...		% rlf, 0:10:70, opto 2500 mV
-	'1155_20171025_02_02_2397_BBN_optoON_9.dat' ...			% rlf, 0:10:70, opto 3000 mV
+	'1155_20171025_02_02_2397_BBN.dat', ...					% rlf, 0:10:60
+	'1155_20171025_02_02_2397_BBN_optoON.dat', ...			% rlf, 0:10:60, opto 3500 mV
+	'1155_20171025_02_02_2397_BBN_optoON_2.dat', ...		% rlf, 0:10:60, opto 500 mV
+	'1155_20171025_02_02_2397_BBN_optoON_3.dat', ...		% rlf, 0:10:60, opto 250 mV
+	'1155_20171025_02_02_2397_BBN_optoON_4.dat', ...		% rlf, 0:10:60, opto 750 mV
+	'1155_20171025_02_02_2397_BBN_optoON_5.dat', ...		% rlf, 0:10:60, opto 1000 mV
+	'1155_20171025_02_02_2397_BBN_optoON_6.dat', ...		% rlf, 0:10:60, opto 1500 mV
+	'1155_20171025_02_02_2397_BBN_optoON_7.dat', ...		% rlf, 0:10:60, opto 2000 mV
+	'1155_20171025_02_02_2397_BBN_optoON_8.dat', ...		% rlf, 0:10:60, opto 2500 mV
+	'1155_20171025_02_02_2397_BBN_optoON_9.dat' ...			% rlf, 0:10:60, opto 3000 mV
 };
 optoRLF.LEDintensity = [ ...
 		0, ...
