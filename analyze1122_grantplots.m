@@ -1,5 +1,8 @@
 %------------------------------------------------------------------------
 % analyze data from animal 1122, plots for grant
+%	1122 has optical cannuli implanted over left hemisphere MG
+%	data were recorded from BLA in left hemisphere using tungsten electrode
+%  animal under urethane anesthesia, head fixed
 %------------------------------------------------------------------------
 
 %------------------------------------------------------------------------
