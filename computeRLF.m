@@ -26,7 +26,7 @@ for n = 1:nLevels
 	rlf.median(n) = median(spikeCount{n});
 	rlf.median_ci{n} = bootci(2000, @median, spikeCount{n});
 end
-
+rlf.spikeCount = spikeCount;
 
 varargout{1} = rlf;
 
