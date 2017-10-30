@@ -6,12 +6,6 @@ idea: for each stimulus/intensity combination, take first n trials, and
 last m trials.
 
 Compare firing rate of two samples.
-
-
-
-1155_20171025_02_02_2397_BBN
-1155_20171025_02_02_2397_BBN_optoON_9 % 3000 mV
-
 %}
 %-----------------------------------------------------------------------------
 
@@ -35,7 +29,7 @@ outpath_base = fullfile(data_root_path, 'Analyzed');
 % 		optoFreqTuning
 % 		optoWav		
 %---------------------------------------------------------------------
-files_for_1155_2397;
+files_for_1155_2616;
 
 %% select data files
 

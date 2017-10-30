@@ -30,6 +30,7 @@ function varargout = optoproc(varargin)
 %---------------------------------------------------------------------
 datafile = '';
 plotpath_base = ''; %#ok<NASGU>
+userPLOTPATH = 0;
 % filter
 HPFreq = 350;
 LPFreq = 6500;
@@ -71,7 +72,8 @@ if nargin
 				datafile = [dfile dext];
 				argIndx = argIndx + 2;
 			case 'PLOTPATH'
-				plotpath_base = varargin{argIndx + 1}; %#ok<NASGU>
+				plotpath_base = varargin{argIndx + 1};
+				userPLOTPATH = 1;
 				argIndx = argIndx + 2;
 			case 'HPFREQ'
 				HPFreq = varargin{argIndx + 1};
@@ -157,7 +159,9 @@ end
 %---------------------------------------------------------------------
 [data_root_path, tytology_root_path] = optoanalysis_paths; %#ok<ASGLU>
 % output path for plots
-plotpath_base = fullfile(data_root_path, 'Analyzed');
+if ~userPLOTPATH
+	plotpath_base = fullfile(data_root_path, 'Analyzed');
+end
 
 %---------------------------------------------------------------------
 % data file things
@@ -205,13 +209,16 @@ end
 % create plot output dir
 %---------------------------------------------------------------------
 if any([saveFIG savePDF savePNG])
-	plotpath = fullfile(plotpath_base, animal, datecode); 
-	fprintf('Files will be written to:\n\t%s\n', plotpath);
-	if ~exist(plotpath, 'dir')
-		mkdir(plotpath);
+	if userPLOTPATH
+		plotpath = plotpath_base;
+	else
+		plotpath = fullfile(plotpath_base, animal, datecode); 
+		fprintf('Files will be written to:\n\t%s\n', plotpath);
+		if ~exist(plotpath, 'dir')
+			mkdir(plotpath);
+		end
 	end
 end
-
 %---------------------------------------------------------------------
 % determine global RMS and max
 %---------------------------------------------------------------------
