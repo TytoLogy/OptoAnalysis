@@ -19,20 +19,23 @@ files_for_1155_2397;
 [data_root_path, tytology_root_path] = optoanalysis_paths;
 % output path for plots
 outpath_base = fullfile(data_root_path, 'Analyzed');
+% out for analysis
+analysispath = fullfile(outpath_base, animalID, dateID, ...
+									'/OptoAnalysisPlots/SlidingWin');
+if ~exist(analysispath, 'dir')
+	mkdir(analysispath);
+end
 
 %---------------------------------------------------------------------
 %---------------------------------------------------------------------
-%% Process RLF data
+%% Process data
 %---------------------------------------------------------------------
 %---------------------------------------------------------------------
 % # of data files
-nfiles = length(optoRLF.files);
-% nfiles = length(optoSlidingWin2K.files);
-
+% nfiles = length(optoRLF.files);
+nfiles = length(optoSlidingWin2K.files);
 % path to data
 datapath = fullfile(data_root_path, animalID, dateID);
-% get indices to sort by opto intensity
-[sortedIntensity, sortedIndices] = sort(optoRLF.LEDintensity);
 % data window (absolute time re: sweep onset)
 AnalysisWindow = [150 200];
 % psth bin size
@@ -54,9 +57,9 @@ spikeThreshold = 3;
 % 		level		db SPL levels [nlevels 1]
 % 		mean		mean value for each level [nlevels 1]
 % 		std		std deviation value for each level [nlevels 1]
-RLFdata = struct(	'datafile', optoRLF.files(sortedIndices), ...
-						'LEDintensity', num2cell(sortedIntensity), ...
-						'LEDpower', num2cell(optoRLF.LEDpower(sortedIndices)), ...
+data = struct(	'datafile', optoSlidingWin2K.files, ...
+						'LEDintensity', optoSlidingWin2K.LEDintensity, ...
+						'LEDpower', optoSlidingWin2K.LEDpower, ...
 						'D', [], ...
 						'Dinf', [], ...
 						'S', [], ...
@@ -68,34 +71,102 @@ RLFdata = struct(	'datafile', optoRLF.files(sortedIndices), ...
 %---------------------------------------------------------------------
 % loop through files in sorted order
 for f = 1:nfiles
-	fprintf('Analyzing %s\n', RLFdata(f).datafile);
-% 	[~, RLFdata(f).Dinf, RLFdata(f).S] = ...
-% 					optoproc('file', fullfile(datapath, RLFdata(f).datafile), ...
-% 								'channel', channelNumber, ...
-% 								'binsize', binSize, ...
-% 								'Threshold', spikeThreshold, 'plotpsth', 'savepdf');
-	[RLFdata(f).D, RLFdata(f).Dinf, RLFdata(f).S, RLFdata(f).T] = ...
-					optoproc('file', fullfile(datapath, RLFdata(f).datafile), ...
+	fprintf('Analyzing %s\n', data(f).datafile);
+	[~, data(f).Dinf, data(f).S] = ...
+					optoproc('file', fullfile(datapath, data(f).datafile), ...
 								'channel', channelNumber, ...
 								'binsize', binSize, ...
-								'Threshold', spikeThreshold);
+								'Threshold', spikeThreshold, 'plotpsth', 'savepdf', ...
+								'plotPath', analysispath);
+% 	[data(f).D, data(f).Dinf, data(f).S, data(f).T] = ...
+% 					optoproc('file', fullfile(datapath, data(f).datafile), ...
+% 								'channel', channelNumber, ...
+% 								'binsize', binSize, ...
+% 								'Threshold', spikeThreshold);
 	% compute RLF
-	RLFdata(f).F = computeRLF(RLFdata(f).S.spiketimes, AnalysisWindow);
-	RLFdata(f).F.nlevels = length(RLFdata(f).Dinf.audio.Level);
-	RLFdata(f).F.level = RLFdata(f).Dinf.audio.Level;
+	% need to figure out analysis window
+	data(f).F = computeRLF(data(f).S.spiketimes, AnalysisWindow);
+	data(f).F.nlevels = length(data(f).Dinf.audio.Level);
+	data(f).F.level = data(f).Dinf.audio.Level;
 end
 
 %---------------------------------------------------------------------
 %% save RLF data
 %---------------------------------------------------------------------
-rlfdatapath = fullfile(outpath_base, animalID, dateID); 
-if ~exist(rlfdatapath, 'dir')
-	mkdir(rlfdatapath);
-end
+% rlfdatapath = fullfile(outpath_base, animalID, dateID); 
+% if ~exist(rlfdatapath, 'dir')
+% 	mkdir(rlfdatapath);
+% end
 rlfdatafile = [animalID '_' dateID '_' unit '_' penetration '_' depth '_' ...
-						'RLFdata.mat'];
-save(fullfile(rlfdatapath, rlfdatafile), 'RLFdata', 'optoRLF', ...
-			'optoFreqTuning', '-MAT');
+						'slidingdata2k.mat'];
+save(fullfile(analysispath, rlfdatafile), 'data', 'optoSlidingWin2K', '-MAT');
+
+
+
+%---------------------------------------------------------------------
+%% plot data across files for each audio intensity level
+%---------------------------------------------------------------------
+
+% make sure nlevels match
+tmp = zeros(nfiles, 1);
+for f = 1:nfiles
+	tmp(f) = data(f).F.nlevels;
+end
+if any(diff(tmp))
+	error('nlevels mismatch!');
+else
+	nlevels = tmp(1);
+end
+clear tmp;
+clear plotopts
+
+% plot options
+plotopts.timelimits = [0 data(f).Dinf.test.AcqDuration];
+plotopts.psth_binwidth = binSize;
+plotopts.raster_tickmarker = '.';
+plotopts.raster_ticksize = 12;
+plotopts.raster_color = 'k';
+plotopts.psth_color = 'k';
+plotopts.stimulus_times_plot = 3;
+plotopts.stimulus_on_color = { 'b', 'g' };
+plotopts.stimulus_off_color = { 'b', 'g' };
+plotopts.stimulus_onoff_pct = [0 50];
+plotopts.stimulus_times = cell(nfiles, 1);
+plotopts.psth_ylimits = [0 30];
+plotopts.plotgap = 0.001;
+plotopts.vertgap = 0.035;
+plotopts.heightscale = 1.05;
+% loop through levels
+for l = 1:nlevels
+	% create/switch to figure
+	figure(l)
+	% allocate spikes
+	S = cell(nfiles, 1);
+	% loop through files
+	for f = 1:nfiles
+		S{f} = data(f).S.spiketimes{l};
+		if data(f).Dinf.opto.Enable
+			plotopts.stimulus_times{f}(1, :) = data(f).Dinf.audio.Delay + ...
+															[0 data(f).Dinf.audio.Duration];
+			plotopts.stimulus_times{f}(2, :) = data(f).Dinf.opto.Delay + ...
+															[0 data(f).Dinf.opto.Dur];
+		else
+			plotopts.stimulus_times{f} = data(f).Dinf.audio.Delay + ...
+															[0 data(f).Dinf.audio.Duration];
+		end
+		% convert onset/offset times to seconds (odd quirk)
+		plotopts.stimulus_times{f} = 0.001 * plotopts.stimulus_times{f};
+	end
+	
+	[H(l), pO(l)] = rasterpsthmatrix(S, plotopts); %#ok<SAGROW>
+	set(figure(l), 'Position',  [680     6   560   972]);
+end
+
+
+
+
+
+
 
 %---------------------------------------------------------------------
 %% plot RLF
@@ -106,8 +177,8 @@ legend_str = cell(nfiles, 1);
 figure;
 for f = 1:nfiles
 
-	rlf = RLFdata(f).F;
-	opto_mW = RLFdata(f).LEDpower;
+	rlf = data(f).F;
+	opto_mW = data(f).LEDpower;
 
 % 	ebneg = zeros(rlf.nlevels, 1);
 % 	ebpos = zeros(rlf.nlevels, 1);
@@ -145,7 +216,7 @@ for f = 1:nfiles
 			plot(rlf.level, rlf.mean, '.-');
 		hold off
 	end
-	legend_str{f} = sprintf('%.1f mW', RLFdata(f).LEDpower);
+	legend_str{f} = sprintf('%.1f mW', data(f).LEDpower);
 end
 legend(legend_str, 'Location', 'best');
 % set markers
@@ -157,10 +228,10 @@ end
 %% plot RLF of [0,250,500,750,1000,1500,2000,2500,3000]
 %---------------------------------------------------------------------
 figure;
-findx = [1 2 3 4 5 6 7 8 9];
+findx = 1:nfiles;
 for f = findx
-	rlf = RLFdata(f).F;
-	opto_mV = RLFdata(f).LEDintensity;
+	rlf = data(f).F;
+	opto_mV = data(f).LEDintensity;
 
 	if f == 1
 		plot(rlf.level, rlf.mean, '.-');
@@ -175,7 +246,7 @@ for f = findx
 			plot(rlf.level, rlf.mean, '.-');
 		hold off
 	end
-	legend_str{f} = sprintf('%.1f mW', RLFdata(f).LEDpower);
+	legend_str{f} = sprintf('%.1f mW', data(f).LEDpower);
 end
 legend(legend_str(findx), 'Location', 'best');
 % set markers
@@ -189,7 +260,7 @@ end
 figure;
 findx = [1 2 4 8];
 for f = findx
-	rlf = RLFdata(f).F;
+	rlf = data(f).F;
 	% either create new plot or add lines to plot
 	if f == 1
 		plot(rlf.level, rlf.mean, '.-');
@@ -204,7 +275,7 @@ for f = findx
 			plot(rlf.level, rlf.mean, '.-');
 		hold off
 	end
-	legend_str{f} = sprintf('%.1f mW', RLFdata(f).LEDpower);
+	legend_str{f} = sprintf('%.1f mW', data(f).LEDpower);
 end
 legend(legend_str(findx), 'Location', 'northwest');
 % set markers, line width
@@ -242,7 +313,7 @@ sound_onoff = struct('onset', 0, 'offset', 1, 'color', 'b');
 opto_onoff = struct('onset', 0, 'offset', 1, 'color', 'g');
 
 for f = findx
-	rlf = RLFdata(f);
+	rlf = data(f);
 	tgtindx = (tgtlevel == rlf.F.level);
 	spiketimes = rlf.S.spiketimes{tgtindx};
 	[histdata.H, histdata.bins] = psth(spiketimes, binSize, ...
