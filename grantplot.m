@@ -72,13 +72,5 @@ end
 draw_stim_onoffset(stimulus_times);
 config_plots(axH(3));
 
-end
 
-%---------------------------------------------------------------------
-% config plots
-%---------------------------------------------------------------------
-function config_plots(h)
-	set(h, 'TickDir', 'out')
-	set(h, 'Box', 'off');
-end
 

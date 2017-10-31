@@ -108,12 +108,9 @@ rlfdatafile = [animalID '_' dateID '_' unit '_' penetration '_' depth '_' ...
 						'slidingdata2k.mat'];
 save(fullfile(analysispath, rlfdatafile), 'data', 'optoSlidingWin3K', '-MAT');
 
-
-
 %---------------------------------------------------------------------
 %% plot data across files for each audio intensity level
 %---------------------------------------------------------------------
-
 % make sure nlevels match
 tmp = zeros(nfiles, 1);
 for f = 1:nfiles
@@ -174,3 +171,116 @@ for l = 1:nlevels
 end
 
 
+%---------------------------------------------------------------------
+%% plot rasters, psth independently
+%---------------------------------------------------------------------
+% make sure nlevels match
+tmp = zeros(nfiles, 1);
+for f = 1:nfiles
+	tmp(f) = data(f).F.nlevels;
+end
+if any(diff(tmp))
+	error('nlevels mismatch!');
+else
+	nlevels = tmp(1);
+end
+clear tmp;
+clear plotopts
+
+% plot options
+% timelimits = [0 data(f).Dinf.test.AcqDuration];
+timelimits = [50 350];
+plotopts.psth_binwidth = binSize;
+raster_tickmarker = '.';
+raster_ticksize = 24;
+raster_color = 'k';
+psth_color = 'k';
+psth_ylimits = [0 30];
+
+
+% select level
+for l = 1:nlevels
+	% create/switch to figure
+	pH(l) = figure;
+	rH(l) = figure;
+	
+	% allocate spikes
+	S = cell(nfiles, 1);
+	% loop through files
+	for f = 1:nfiles
+		% local copies
+		S{f} = data(f).S.spiketimes{l};
+		Dinf = data(f).Dinf;
+
+		%---------------------------------------------------------------------
+		% stimulus on/off times
+		%---------------------------------------------------------------------
+		% initialize stimulus onset offset line structs
+		sound_onoff = struct('onset', 0, 'offset', 1, 'color', 'b');
+		opto_onoff = struct('onset', 0, 'offset', 1, 'color', 'g');
+		sound_onoff.onset = Dinf.audio.Delay;
+		sound_onoff.offset = Dinf.audio.Delay + Dinf.audio.Duration;
+		if Dinf.opto.Enable == 1
+			opto_onoff.onset = Dinf.opto.Delay;
+			opto_onoff.offset = Dinf.opto.Delay + Dinf.opto.Dur;
+			stim_onoff = [sound_onoff opto_onoff];
+		else
+			stim_onoff = sound_onoff;
+		end
+
+		%---------------------------------------------------------------------
+		% psth
+		%---------------------------------------------------------------------
+		figure(pH(l));
+		[histdata.H, histdata.bins] = psth(S{f}, binSize, timelimits);
+		subplot(nfiles, 1, f);
+		bar(histdata.bins, histdata.H, 1, 'EdgeColor', psth_color, ...
+														'FaceColor',psth_color);
+		ylim(psth_ylimits);
+		% draw stimulus on/off
+		draw_stim_onoffset(stim_onoff);
+		config_plots(gca);
+		if f == nfiles
+			xlabel('Time (ms)');
+			ylabel('Spike Count');
+		else
+			set(gca, 'XTickLabel', {});
+			set(gca, 'XTickLabel', {});
+		end
+
+		%---------------------------------------------------------------------
+		% Plot raster data
+		%---------------------------------------------------------------------
+		figure(rH(l));
+		subplot(nfiles, 1, f)
+		rasterplot(S{f}, timelimits, raster_tickmarker, ...
+												raster_ticksize, raster_color);
+% 		% adjust y tick labels
+% 		ytl = get(gca, 'YTickLabels');
+% 		set(gca, 'YTickLabels', flipud(ytl));
+		% draw stimulus on/off
+		ylim([-3 Dinf.test.Reps])
+		draw_stim_onoffset(stim_onoff);
+		config_plots(gca);
+		if f == nfiles
+			xlabel('Time (ms)');
+			ylabel('Trial');
+		else
+			set(gca, 'XTickLabel', {});
+			set(gca, 'XTickLabel', {});
+		end
+	end
+
+	psthfilename = sprintf('Sliding_3K_%ddB_psth', data(1).F.level(l));
+	set(pH(l), 'Name', psthfilename);
+	set(pH(l), 'FileName', fullfile(analysispath, [psthfilename '.fig']));
+	print(pH(l), fullfile(analysispath, [psthfilename, '.pdf']), ...
+															'-dpdf', '-r600');
+
+	rasterfilename = sprintf('Sliding_3K_%ddB_raster', data(1).F.level(l));
+	set(rH(l), 'Name', rasterfilename);
+	set(rH(l), 'FileName', fullfile(analysispath, [rasterfilename '.fig']));
+	print(rH(l), fullfile(analysispath, [rasterfilename, '.pdf']), ...
+															'-dpdf', '-r600');
+
+end
