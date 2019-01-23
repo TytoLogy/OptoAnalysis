@@ -7,6 +7,28 @@ function varargout = optoproc(varargin)
 % Processes data collected by the opto program
 %
 %------------------------------------------------------------------------
+%  Input Options:
+%   DATAFILE or FILE		path and name of .dat file
+%   PLOTPATH				path (directory) for output of plot files
+%   HPFREQ					high pass filter cutoff frequency for neural data (Hz)
+%   LPFREQ					low pass filter cutoff frequency for neural data (Hz)
+%   THRESHOLD				RMS spike threshold (# RMS)
+%   CHANNEL					Input data channel (1-16)
+%   BINSIZE					binsize for PSTH (ms)
+%   PLOT_TRACES or		draw plots of all individual traces (1 = yes, 2 = no)
+%		PLOTTRACES
+%   PLOT_PSTH or			draw plots of PSTHs (1 = yes, 2 = no)
+%		PLOTPSTH	
+%   SAVEFIG					save .fig plots (1 = yes, 2 = no)
+%   SAVEPNG					save plots as .png files (1 = yes, 2 = no)
+%   SAVEPDF					save plots as .pdf files (1 = yes, 2 = no)
+%   TIMELIMITS				limit time range to specified interval
+%									(e.g., [0 1000], in ms);
+%   YLIMITS					limit y axis to specified interval (e.g., [-1 1])
+%   PLOT_FILENAME			user-specified plot file base name (e.g., '1142_unit1')
+%   PLOTROWCOLS			# of rows and columns for plots	
+%									([2 3] is 2 rows, 3 cols)
+%	 SHOW_DEFAULTS			show default values for options
 %------------------------------------------------------------------------
 % See Also:
 %------------------------------------------------------------------------
@@ -18,18 +40,14 @@ function varargout = optoproc(varargin)
 % Created: ???
 %
 % Revisions:
-%	see git!
-%------------------------------------------------------------------------
-% TO DO:
-%	- Document
-%	- Functionalize
+%	22 Jan 19 (SJS): added input arg documentation
 %--------------------------------------------------------------------------
 
 %---------------------------------------------------------------------
 % settings for processing data
 %---------------------------------------------------------------------
 datafile = '';
-plotpath_base = ''; %#ok<NASGU>
+plotpath_base = ''; 
 userPLOTPATH = 0;
 % filter
 HPFreq = 350;
@@ -148,6 +166,31 @@ if nargin
 					error('%s: invalid argument to plotRowsCols %s', tmp);
 				end
 				argIndx = argIndx + 2;
+			case 'SHOW_DEFAULTS'
+				fprintf('%s: Default values:\n', mfilename)
+				fprintf('\tDATAFILE: %s\n', datafile);
+				fprintf('\tPLOTPATH: %s\n', plotpath_base);
+				fprintf('\tHPFREQ: %d\n', HPFreq);
+				fprintf('\tLPFREQ: %d\n', LPFreq);
+				fprintf('\tTHRESHOLD: %d\n', Threshold);
+				fprintf('\tCHANNEL: %d\n', channelNumber);
+				fprintf('\tBINSIZE: %d\n', binSize);
+				fprintf('\tPLOT_TRACES: %d\n', plotTraces);
+				fprintf('\tPLOT_PSTH: %d\n', plotPSTH);
+				fprintf('\tSAVEFIG: %d\n', saveFIG);
+				fprintf('\tSAVEPNG: %d\n', savePNG);
+				fprintf('\tSAVEPDF: %d\n', savePDF);
+				fprintf('\tTIMELIMITS: '); 
+					fprintf('%.2f ', timeLimits);	fprintf('\n');
+				fprintf('\tYLIMITS: ');
+					fprintf('%.2f ', yLimits); fprintf('\n');
+				fprintf('\tPLOTROWCOLS: ');
+				if autoRowCols
+					fprintf('autoRowCols = 1\n');
+				else
+					fprintf('%d rows %d cols\n', prows, pcols);
+				end
+				return
 			otherwise
 				error('%s: unknown input arg %s', mfilename, varargin{argIndx});
 		end

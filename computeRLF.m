@@ -1,12 +1,27 @@
-function varargout = computeRLF(spikeTimes, analysisWindow)
-%
+function varargout = computeRLF(spikeTimes, levels, analysisWindow)
+%------------------------------------------------------------------------
+% process Spiketimes into rate level function
+%------------------------------------------------------------------------
 % assumes spikeTimes is in format:
 % 		spikeTimes{nLevels, 1}
 % 			spikeTimes{n} = {nTrials, 1}
-% 				spikeTimes{n}{t} = [spike1_ms spike2_ms spike3ms ...]
+% 				spikeTimes{n}{t} = [spike1_ms spike2_ms spike3ms ...
+%------------------------------------------------------------------------
+%  Sharad Shanbhag
+%	sshanbhag@neomed.edu
+%------------------------------------------------------------------------
+% Created: 23 Oct 2017 (SJS) 
+%	- adapted from viewOptoData.m
+% 
+% Revisions:
+%	22 Jan 2019 (SJS): added levels as input
+%------------------------------------------------------------------------
 
-nLevels = length(spikeTimes);
+
+nLevels = length(levels);
 spikeCount = cell(nLevels, 1);
+rlf.levels = levels;
+rlf.window = analysisWindow;
 rlf.mean = zeros(nLevels, 1);
 rlf.std = zeros(nLevels, 1);
 rlf.mean_ci = cell(nLevels, 1);
