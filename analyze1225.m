@@ -28,6 +28,9 @@ LPFreq = 6000;
 % PSTH bin width (ms)
 psthBin = 10;
 
+% Channel for data
+channelNumber = 8;
+
 %------------------------------------------------------------------------
 %% Read Data
 %------------------------------------------------------------------------
@@ -49,27 +52,36 @@ else
 % 	datafile = '1110_20170515_01_01_4038_WAV_OPTO.dat';
 % 	datapath = '/Users/sshanbhag/Work/Data/Mouse/Opto/1108/20170529';
 	datapath = '/Users/sshanbhag/Work/Data/Mouse/Opto/1225/20190115';
-	datafile = '1225_20190115_03_02_894_BBN.dat';
-	
+% 	datafile = '1225_20190115_03_02_894_BBN.dat';
+	datafile = '1225_20190115_02_01_744_FRA.dat';
 end
 
-% read in data
-[D, Dinf] = readOptoData(fullfile(datapath, datafile));
+[D, Dinf] = optoproc('file', '/Users/sshanbhag/Work/Data/Mouse/Opto/1225/20190115/1225_20190115_02_01_744_FRA.dat')
 
-%% define filter for data
+
+%% read in data
+[D, Dinf] = readOptoData(fullfile(datapath, datafile));
+% define filter for data
 % sampling rate
 Fs = Dinf.indev.Fs;
 % build bandpass filter, store coefficients in filtB, filtA
 fband = [HPFreq LPFreq] ./ (0.5 * Fs);
 [filtB, filtA] = butter(5, fband);
 
+%% Alternative
+[D, Dinf, tracesByStim] = getFilteredOptoData( ...
+											fullfile(datapath, datafile), ...
+											'Filter', [HPFreq LPFreq], ...
+											'Channel', channelNumber);
+
 %% Get test info
 
 % try to get information from test Type
 if isfield(Dinf.test, 'Type')
-	% convert ascii characters from binary file 
-	Dinf.test.Type = char(Dinf.test.Type);
-	fprintf('Test type: %s\n', Dinf.test.Type);
+	if ~ischar(Dinf.test.Type)
+		% convert ascii characters from binary file 
+		Dinf.test.Type = char(Dinf.test.Type);
+	end
 else
 	% otherwise, need to find a different way
 	if isfield(Dinf.test, 'optovar_name')
@@ -82,8 +94,8 @@ else
 			Dinf.test.Type = Dinf.test.audiovar_name;
 		end
 	end
-	fprintf('Test type: %s\n', Dinf.test.Type);
 end
+fprintf('Test type: %s\n', Dinf.test.Type);
 
 %%
 % Some test-specific things...

@@ -232,10 +232,20 @@ if isempty(D)
 end
 
 %---------------------------------------------------------------------
-% get info from filename
+% get info from filename - this makes some assumptions about file
+% name structure!
+% <animal id #>_<date>_<penetration #>_<unit #>_<other info>.dat
 %---------------------------------------------------------------------
+% break up file name into <fname>.<ext> (~ means don't save ext info)
 [~, fname] = fileparts(datafile);
+% locate underscores in fname
 usc = find(fname == '_');
+% location of start and end underscore indices
+%    abcde_edcba
+%        ^ ^
+%        | |
+%        | ---- endusc index
+%        ---startusc index
 endusc = usc - 1;
 startusc = usc + 1;
 animal = fname(1:endusc(1));
@@ -249,7 +259,7 @@ if isempty(plotFileName)
 end
 
 %---------------------------------------------------------------------
-% create plot output dir
+% create plot output dir if plots will be saved to files
 %---------------------------------------------------------------------
 if any([saveFIG savePDF savePNG])
 	if userPLOTPATH
@@ -263,7 +273,7 @@ if any([saveFIG savePDF savePNG])
 	end
 end
 %---------------------------------------------------------------------
-% determine global RMS and max
+% determine global RMS and max - used for thresholding
 %---------------------------------------------------------------------
 % first, get  # of stimuli (called ntrials by opto) as well as # of reps
 if strcmpi(Dinf.test.Type, 'WavFile')
