@@ -58,7 +58,7 @@ datafile = '1225_20190115_02_01_744_FRA.dat';
 [D, Dinf, spikes, traces] = optoproc('file', fullfile(datapath, datafile), ...
 													'channel', channelNumber);
 
-save('tmpdata.mat', 'D', 'Dinf', 'spikes', 'traces', 'datapath', 'datafile');
+save('fratestdata.mat', 'D', 'Dinf', 'spikes', 'traces', 'datapath', 'datafile');
 
 %% Plot Level data
 if strcmpi(Dinf.test.Type, 'LEVEL')

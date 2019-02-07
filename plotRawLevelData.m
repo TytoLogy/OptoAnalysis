@@ -1,5 +1,27 @@
 function varargout = plotRawLevelData(traces, Dinf)
+%------------------------------------------------------------------------
+% varargout = plotRawLevelData(traces, Dinf)
+%------------------------------------------------------------------------
+% % TytoLogy:Experiments:OptoAnalysis
+%--------------------------------------------------------------------------
+% Plots raw rate-level data
+%
+%------------------------------------------------------------------------
+%  Input:
+%   traces				cell array of raw responses at each level	
+%	 Dinf					Data info struct
+%------------------------------------------------------------------------
+% See Also:
+%------------------------------------------------------------------------
 
+%------------------------------------------------------------------------
+%  Sharad Shanbhag
+%   sshanbhag@neomed.edu
+%------------------------------------------------------------------------
+% Created: 7 February, 2019 (SJS)
+%
+% Revisions:
+%--------------------------------------------------------------------------
 
 if ~strcmpi(Dinf.test.Type, 'LEVEL')
 	warning('%s: test type (%s) is not LEVEL!', mfilename, Dinf.test.Type);

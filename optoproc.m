@@ -514,8 +514,9 @@ if plotPSTH
 			rasterpsthmatrix(reshape([spiketimes; {{}}], [prows pcols]), plotopts);
 		end
 	else
+		% for 2D data... might be overkill....
 		stimulus_times = cell(nvars(2), nvars(1));
-% 		plotopts.plot_titles = cell(nvars(2), nvars(1));
+ 		plotopts.plot_titles = cell(nvars(2), nvars(1));
 		for f = 1:nvars(1)
 			for l = 1:nvars(2)
 				% need to have [stim_onset stim_offset], so add delay to 
@@ -529,34 +530,12 @@ if plotPSTH
 														 0.001 * (Dinf.opto.Delay + ...
 																	[0 Dinf.opto.Dur]) ];
 				end
-% 				plotopts.plot_titles{l, f} = sprintf('%d kHz', freq);
+				plotopts.plot_titles{l, f} = sprintf('%d kHz', freq);
 			end
 		end
 
 		plotopts.stimulus_times = stimulus_times;
 		rasterpsthmatrix(spiketimes, plotopts);
-
-		%{
-		% adjust depending on # of columns of plots
-		if nvars(1) <= 5
-			plotopts.plot_titles = titleString;
-			plotopts.stimulus_times = stimulus_times;
-			rasterpsthmatrix(spiketimes, plotopts);
-		elseif iseven(nvars(1))
-			plotopts.plot_titles = reshape(titleString, [prows pcols]);
-			plotopts.stimulus_times = reshape(stimulus_times, [prows pcols]);
-			rasterpsthmatrix(reshape(spiketimes, [prows pcols]), plotopts);
-		else
-			% need to add 'dummy' element to arrays
-		% 	titleString = [titleString; {''}];
-		% 	spiketimes = [spiketimes; {{}}];
-			plotopts.plot_titles = reshape([titleString; {''}], [prows pcols]);
-			plotopts.stimulus_times = ...
-								reshape(	[stimulus_times; stimulus_times{end}], ...
-											[prows pcols]);
-			rasterpsthmatrix(reshape([spiketimes; {{}}], [prows pcols]), plotopts);
-		end		
-		%}
 		
 	end
 	% set plot name
@@ -585,7 +564,7 @@ if nargout
 	varargout{2} = Dinf;
 	varargout{3} = struct('spiketimes', {spiketimes}, 'mean_rms', mean_rms, ...
 									'global_max', global_max, 'Threshold', Threshold, ...
-									'nvars', nvars, 'varlist', varlist);
+									'nvars', nvars, 'varlist', {varlist});
 	varargout{4} = tracesByStim;
 	if plotPSTH
 		varargout{5} = plotopts;
