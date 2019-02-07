@@ -373,9 +373,9 @@ if ~strcmpi(Dinf.test.Type, 'FREQ+LEVEL')
 % 		end
 	end
 else
-	spiketimes = cell(nvars{2}, nvars{1});
-	for v1 = 1:nvars{1}
-		for v2 = 1:nvars{2}
+	spiketimes = cell(nvars(2), nvars(1));
+	for v1 = 1:nvars(1)
+		for v2 = 1:nvars(2)
 			% use rms threshold to find spikes
 			spiketimes{v2, v1} = ...
 					spikeschmitt2(tracesByStim{v2, v1}', Threshold*mean_rms, ...
@@ -385,8 +385,7 @@ else
 % 				spiketimes{v2, v1}{r} = (1000/Fs)*spiketimes{v2, v1};
 % 			end
 		end
-	end	
-	
+	end
 end
 %---------------------------------------------------------------------
 % determine # of columns of plots

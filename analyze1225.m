@@ -56,7 +56,8 @@ end
 % datafile = '1225_20190115_03_02_894_BBN.dat';
 datafile = '1225_20190115_02_01_744_FRA.dat';
 %% Read Data
-[D, Dinf, ] = optoproc('file', fullfile(datapath, datafile));
+[D, Dinf, spikes, traces] = optoproc('file', fullfile(datapath, datafile), ...
+						'plotrowcols', [2 2]);
 
 
 %% Get test info
