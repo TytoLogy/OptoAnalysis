@@ -7,11 +7,6 @@ load fratestdata.mat
 %----------------------------------------------------------------------
 %% Some test-specific things...
 %----------------------------------------------------------------------
-% for FREQ test, find indices of stimuli with same frequency
-if isnumeric(Dinf.test.Type)
-	Dinf.test.Type = char(Dinf.test.Type);
-end
-
 switch upper(Dinf.test.Type)
 
 	% for FRA (FREQ+LEVEL) test, find indices of stimuli with
@@ -68,18 +63,42 @@ end
                  vrange: [2×126 double]
                 stimvar: {1×1260 cell}
 %}
+%{
+
+Raw data are in a vector of length nstims, in order of presentation.
+
+values used for the two variables (Freq. and Level) are stored in vrange
+matrix, which is of length (nfreq X nlevel) and holds values as row 1 =
+freq, row 2 = level
+
+e.g.
+
+Dinf.test.stimcache.vrange(:, 1:5) =
+        4000        4000        4000        4000        4000
+           0          10          20          30          40
+
+trialRandomSequence holds randomized list of indices into vrange, has
+dimensions of [nreps, ntrials]
+
+To sort the data for FRA:
+	for each freq and level combination, locate the indices for that
+	combination in the respective FREQ and LEVEL list. 
+	These indices can then be used within the D{} array
+
+
+
+%}
 
 if strcmpi(Dinf.test.Type, 'FREQ+LEVEL')
-	tracesByStim = cell(nfreqs, nlevels);
-	
+	tracesByStim = cell(nlevels, nfreqs);
+	stimindex = cell(nlevels, nfreqs);
 	for f = 1:nfreqs
 		for l = 1:nlevels
-			
-			
+			currentF = freqlist(f);
+			currentL = levellist(l);
+			stimindex{l, f} = find( (Dinf.test.stimcache.FREQ == currentF) & ...
+											(Dinf.test.stimcache.LEVEL == currentL) );
+			tracesByStim{l, f} = D(stimindex{l, f});
 		end
 	end
-	
-
-
-
 end

@@ -52,10 +52,10 @@ else
 % 	datafile = '1110_20170515_01_01_4038_WAV_OPTO.dat';
 % 	datapath = '/Users/sshanbhag/Work/Data/Mouse/Opto/1108/20170529';
 	datapath = '/Users/sshanbhag/Work/Data/Mouse/Opto/1225/20190115';
-% 	datafile = '1225_20190115_03_02_894_BBN.dat';
-	datafile = '1225_20190115_02_01_744_FRA.dat';
 end
-
+% datafile = '1225_20190115_03_02_894_BBN.dat';
+datafile = '1225_20190115_02_01_744_FRA.dat';
+%%
 [D, Dinf] = optoproc('file', '/Users/sshanbhag/Work/Data/Mouse/Opto/1225/20190115/1225_20190115_02_01_744_FRA.dat')
 
 
