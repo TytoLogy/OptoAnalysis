@@ -55,24 +55,9 @@ else
 end
 % datafile = '1225_20190115_03_02_894_BBN.dat';
 datafile = '1225_20190115_02_01_744_FRA.dat';
-%%
-[D, Dinf] = optoproc('file', '/Users/sshanbhag/Work/Data/Mouse/Opto/1225/20190115/1225_20190115_02_01_744_FRA.dat')
+%% Read Data
+[D, Dinf, ] = optoproc('file', fullfile(datapath, datafile));
 
-
-%% read in data
-[D, Dinf] = readOptoData(fullfile(datapath, datafile));
-% define filter for data
-% sampling rate
-Fs = Dinf.indev.Fs;
-% build bandpass filter, store coefficients in filtB, filtA
-fband = [HPFreq LPFreq] ./ (0.5 * Fs);
-[filtB, filtA] = butter(5, fband);
-
-%% Alternative
-[D, Dinf, tracesByStim] = getFilteredOptoData( ...
-											fullfile(datapath, datafile), ...
-											'Filter', [HPFreq LPFreq], ...
-											'Channel', channelNumber);
 
 %% Get test info
 

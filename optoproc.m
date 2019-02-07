@@ -228,6 +228,7 @@ end
 											'Filter', [HPFreq LPFreq], ...
 											'Channel', channelNumber);
 if isempty(D)
+	warning('%s: D is empty???!!!??!!', mfilename);
 	return
 end
 
@@ -317,7 +318,7 @@ switch upper(Dinf.test.Type)
 			end
 		end
 	case 'LEVEL'
-		% list of legvels, and # of levels tested
+		% list of levels, and # of levels tested
 		varlist = Dinf.test.stimcache.vrange;
 		nvars = length(varlist);
 		titleString = cell(nvars, 1);
@@ -328,6 +329,16 @@ switch upper(Dinf.test.Type)
 				titleString{v} = sprintf('Level = %d dB SPL', varlist(v));
 			end
 		end
+	case 'FREQ+LEVEL'
+		% list of freq, levels
+		varlist = cell(2, 1);
+		nvars = zeros(2, 1);
+		for v = 1:2
+			varlist{v} = unique(Dinf.test.stimcache.vrange(v, :), 'sorted');
+			nvars(v) = length(varlist{v});
+		end
+		titleString = fname;
+
 	case 'OPTO'
 		% not yet implemented
 	case 'WAVFILE'
@@ -350,16 +361,33 @@ end
 % find spikes!
 %---------------------------------------------------------------------
 Fs = Dinf.indev.Fs;
-spiketimes = cell(nvars, 1);
-for v = 1:nvars
-	% use rms threshold to find spikes
-	spiketimes{v} = spikeschmitt2(tracesByStim{v}', Threshold*mean_rms, 1, Fs);
-	% convert spike times in seconds to milliseconds
-	for r = 1:length(spiketimes{v})
-		spiketimes{v}{r} = (1000/Fs)*spiketimes{v}{r};
+if ~strcmpi(Dinf.test.Type, 'FREQ+LEVEL')
+	spiketimes = cell(nvars, 1);
+	for v = 1:nvars
+		% use rms threshold to find spikes
+		spiketimes{v} = spikeschmitt2(tracesByStim{v}', Threshold*mean_rms, ...
+																			1, Fs, 'ms');
+% 		% convert spike times in seconds to milliseconds
+% 		for r = 1:length(spiketimes{v})
+% 			spiketimes{v}{r} = (1000/Fs)*spiketimes{v}{r};
+% 		end
 	end
+else
+	spiketimes = cell(nvars{2}, nvars{1});
+	for v1 = 1:nvars{1}
+		for v2 = 1:nvars{2}
+			% use rms threshold to find spikes
+			spiketimes{v2, v1} = ...
+					spikeschmitt2(tracesByStim{v2, v1}', Threshold*mean_rms, ...
+																		1, Fs, 'ms');
+% 			% convert spike times in seconds to milliseconds
+% 			for r = 1:length(spiketimes{v2, v1})
+% 				spiketimes{v2, v1}{r} = (1000/Fs)*spiketimes{v2, v1};
+% 			end
+		end
+	end	
+	
 end
-
 %---------------------------------------------------------------------
 % determine # of columns of plots
 %---------------------------------------------------------------------
