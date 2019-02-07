@@ -262,7 +262,7 @@ end
 %---------------------------------------------------------------------
 % create plot output dir if plots will be saved to files
 %---------------------------------------------------------------------
-if any([saveFIG savePDF savePNG])
+if any([saveFIG savePDF savePNG]) && any([plotTraces plotPSTH])				
 	if userPLOTPATH
 		plotpath = plotpath_base;
 	else
@@ -273,6 +273,7 @@ if any([saveFIG savePDF savePNG])
 		end
 	end
 end
+
 %---------------------------------------------------------------------
 % determine global RMS and max - used for thresholding
 %---------------------------------------------------------------------

@@ -32,7 +32,7 @@ psthBin = 10;
 channelNumber = 8;
 
 %------------------------------------------------------------------------
-%% Read Data
+%% Specify Data File Location/Name
 %------------------------------------------------------------------------
 
 % set paths, data file name
@@ -42,7 +42,6 @@ if ispc
 % 	datapath = 'E:\Data\SJS\1012\20160727';
 % 	datafile = '1012_20160727_5_3_1_OPTO.dat';
 	datapath = 'E:\Data\SJS';
-	datafile = '';
 else 
 	% assume this is a mac
 % 	datapath = '/Users/sshanbhag/Work/Data/Mouse/Opto/1012/20160727';
@@ -57,110 +56,7 @@ end
 datafile = '1225_20190115_02_01_744_FRA.dat';
 %% Read Data
 [D, Dinf, spikes, traces] = optoproc('file', fullfile(datapath, datafile), ...
-						'plotrowcols', [2 2]);
-
-
-%% Get test info
-
-% try to get information from test Type
-if isfield(Dinf.test, 'Type')
-	if ~ischar(Dinf.test.Type)
-		% convert ascii characters from binary file 
-		Dinf.test.Type = char(Dinf.test.Type);
-	end
-else
-	% otherwise, need to find a different way
-	if isfield(Dinf.test, 'optovar_name')
-		Dinf.test.optovar_name = char(Dinf.test.optovar_name);
-	end
-	if isfield(Dinf.test, 'audiovar_name')
-		Dinf.test.audiovar_name = char(Dinf.test.audiovar_name);
-		if strcmpi(Dinf.test.audiovar_name, 'WAVFILE')
-			% test is WAVfile
-			Dinf.test.Type = Dinf.test.audiovar_name;
-		end
-	end
-end
-fprintf('Test type: %s\n', Dinf.test.Type);
-
-%%
-% Some test-specific things...
-
-% for FREQ test, find indices of stimuli with same frequency
-if isnumeric(Dinf.test.Type)
-	Dinf.test.Type = char(Dinf.test.Type);
-end	
-switch upper(Dinf.test.Type)
-	case 'FREQ'
-		% list of frequencies, and # of freqs tested
-		freqlist = cell2mat(Dinf.test.stimcache.FREQ);
-		nfreqs = length(Dinf.test.stimcache.vrange);
-		% locate where trials for each frequency are located in the 
-		% stimulus cache list - this will be used to pull out trials of
-		% same frequency
-		stimindex = cell(nfreqs, 1);
-		for f = 1:nfreqs
-			stimindex{f} = find(Dinf.test.stimcache.vrange(f) == freqlist);
-		end
-		
-% for LEVEL test, find indices of stimuli with same level (dB SPL)
-	case 'LEVEL'
-		% list of legvels, and # of levels tested
-		levellist = Dinf.test.stimcache.LEVEL;
-		nlevels = length(Dinf.test.stimcache.vrange);
-		% locate where trials for each frequency are located in the 
-		% stimulus cache list - this will be used to pull out trials of
-		% same frequency
-		stimindex = cell(nlevels, 1);
-		for l = 1:nlevels
-			stimindex{l} = find(Dinf.test.stimcache.vrange(l) == levellist);
-		end
-
-% for OPTO test...
-	case 'OPTO'
-	
-	% for WavFile, need to find indices with same filename.
-	case 'WAVFILE'
-		% get list of stimuli (wav file names)
-		nwavs = length(Dinf.stimList);
-		wavlist = cell(nwavs, 1);
-		stimindex = cell(nwavs, 1);
-		for w = 1:nwavs
-			stype = Dinf.stimList(w).audio.signal.Type;
-			if strcmpi(stype, 'null')
-				wavlist{w} = 'null';
-			elseif strcmpi(stype, 'noise')
-				wavlist{w} = 'BBN';
-			elseif strcmpi(stype, 'wav')
-				[~, wavlist{w}] = fileparts(Dinf.stimList(w).audio.signal.WavFile);
-			else
-				error('%s: unknown type %s', mfilename, stype);
-			end
-			stimindex{w} = find(Dinf.test.stimIndices == w);
-		end
-
-	otherwise
-		error('%s: unsupported test type %s', mfilename, Dinf.test.Type);
-end
-
-
-%% Pull out trials, apply filter, store in matrix
-if isfield(Dinf.channels, 'nRecordChannels')
-	nchan = Dinf.channels.nRecordChannels;
-	channelList = Dinf.channels.RecordChannelList;
-else
-	nchan = Dinf.channels.nInputChannels;
-	channelList = Dinf.channels.InputChannels;
-end
-
-
-%% find channel data
-channelNumber = 8;
-channelIndex = find(channelList == channelNumber);
-% if requested channelNumber is not in the channelList, throw an error
-if isempty(channelIndex)
-	error('Channel not recorded')
-end
+													'channel', channelNumber);
 
 %% Plot data for one channel, process will vary depending on stimulus type
 
