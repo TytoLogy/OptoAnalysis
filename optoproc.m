@@ -2,7 +2,7 @@ function varargout = optoproc(varargin)
 %------------------------------------------------------------------------
 % optoproc
 %------------------------------------------------------------------------
-% % TytoLogy:Experiments:opto Application
+% % TytoLogy:Experiments:OptoAnalysis
 %--------------------------------------------------------------------------
 % Processes data collected by the opto program
 %
@@ -41,6 +41,8 @@ function varargout = optoproc(varargin)
 %
 % Revisions:
 %	22 Jan 19 (SJS): added input arg documentation
+%	7 Feb 19 (SJS): working to streamline processing of data - pulling
+%	operations into separate functions as much as possible
 %--------------------------------------------------------------------------
 
 %---------------------------------------------------------------------
@@ -333,6 +335,7 @@ switch upper(Dinf.test.Type)
 	case 'FREQ+LEVEL'
 		% list of freq, levels
 		varlist = cell(2, 1);
+		% # of freqs in nvars(1), # of levels in nvars(2)
 		nvars = zeros(2, 1);
 		for v = 1:2
 			varlist{v} = unique(Dinf.test.stimcache.vrange(v, :), 'sorted');
@@ -361,19 +364,19 @@ end
 %---------------------------------------------------------------------
 % find spikes!
 %---------------------------------------------------------------------
+% local copy of sample rate
 Fs = Dinf.indev.Fs;
+
+% if test is not FREQ+LEVEL (FRA), nvars will be a single number
 if ~strcmpi(Dinf.test.Type, 'FREQ+LEVEL')
 	spiketimes = cell(nvars, 1);
 	for v = 1:nvars
 		% use rms threshold to find spikes
 		spiketimes{v} = spikeschmitt2(tracesByStim{v}', Threshold*mean_rms, ...
 																			1, Fs, 'ms');
-% 		% convert spike times in seconds to milliseconds
-% 		for r = 1:length(spiketimes{v})
-% 			spiketimes{v}{r} = (1000/Fs)*spiketimes{v}{r};
-% 		end
 	end
 else
+	% for FRA data, nvars has values [nfreqs nlevels];
 	spiketimes = cell(nvars(2), nvars(1));
 	for v1 = 1:nvars(1)
 		for v2 = 1:nvars(2)
@@ -381,10 +384,6 @@ else
 			spiketimes{v2, v1} = ...
 					spikeschmitt2(tracesByStim{v2, v1}', Threshold*mean_rms, ...
 																		1, Fs, 'ms');
-% 			% convert spike times in seconds to milliseconds
-% 			for r = 1:length(spiketimes{v2, v1})
-% 				spiketimes{v2, v1}{r} = (1000/Fs)*spiketimes{v2, v1};
-% 			end
 		end
 	end
 end
@@ -392,15 +391,21 @@ end
 % determine # of columns of plots
 %---------------------------------------------------------------------
 if autoRowCols
-	if nvars <= 6
-		prows = nvars;
-		pcols = 1;
-	elseif iseven(nvars)
-		prows = nvars/2;
-		pcols = 2;
+	if numel(nvars) < 1
+		if nvars <= 6
+			prows = nvars;
+			pcols = 1;
+		elseif iseven(nvars)
+			prows = nvars/2;
+			pcols = 2;
+		else
+			prows = ceil(nvars/2);
+			pcols = 2;
+		end
 	else
-		prows = ceil(nvars/2);
-		pcols = 2;
+		% rows = levels, cols = freqs
+		prows = nvars(2);
+		pcols = nvars(1);
 	end
 end
 
@@ -473,39 +478,86 @@ if plotPSTH
 	end
 
 	% create times to indicate stimuli
-	stimulus_times = cell(nvars, 1);
-	for v = 1:nvars
-		% need to have [stim_onset stim_offset], so add delay to 
-		% [0 duration] to compute proper times. then, multiply by 0.001 to
-		% give times in seconds (Dinf values are in milliseconds)
-		stimulus_times{v, 1} = 0.001 * (Dinf.audio.Delay + ...
-															[0 Dinf.audio.Duration]);
-		% if opto is Enabled, add it to the array by concatenation
-		if Dinf.opto.Enable
-			stimulus_times{v, 1} = [stimulus_times{v, 1}; ...
-												 0.001 * (Dinf.opto.Delay + ...
-															[0 Dinf.opto.Dur]) ];
+	if numel(nvars) == 1
+		stimulus_times = cell(nvars, 1);
+		for v = 1:nvars
+			% need to have [stim_onset stim_offset], so add delay to 
+			% [0 duration] to compute proper times. then, multiply by 0.001 to
+			% give times in seconds (Dinf values are in milliseconds)
+			stimulus_times{v, 1} = 0.001 * (Dinf.audio.Delay + ...
+																[0 Dinf.audio.Duration]);
+			% if opto is Enabled, add it to the array by concatenation
+			if Dinf.opto.Enable
+				stimulus_times{v, 1} = [stimulus_times{v, 1}; ...
+													 0.001 * (Dinf.opto.Delay + ...
+																[0 Dinf.opto.Dur]) ];
+			end
 		end
-	end
 
-	% adjust depending on # of columns of plots
-	if nvars <= 5
-		plotopts.plot_titles = titleString;
+		% adjust depending on # of columns of plots
+		if nvars <= 5
+			plotopts.plot_titles = titleString;
+			plotopts.stimulus_times = stimulus_times;
+			rasterpsthmatrix(spiketimes, plotopts);
+		elseif iseven(nvars)
+			plotopts.plot_titles = reshape(titleString, [prows pcols]);
+			plotopts.stimulus_times = reshape(stimulus_times, [prows pcols]);
+			rasterpsthmatrix(reshape(spiketimes, [prows pcols]), plotopts);
+		else
+			% need to add 'dummy' element to arrays
+		% 	titleString = [titleString; {''}];
+		% 	spiketimes = [spiketimes; {{}}];
+			plotopts.plot_titles = reshape([titleString; {''}], [prows pcols]);
+			plotopts.stimulus_times = ...
+								reshape(	[stimulus_times; stimulus_times{end}], ...
+											[prows pcols]);
+			rasterpsthmatrix(reshape([spiketimes; {{}}], [prows pcols]), plotopts);
+		end
+	else
+		stimulus_times = cell(nvars(2), nvars(1));
+% 		plotopts.plot_titles = cell(nvars(2), nvars(1));
+		for f = 1:nvars(1)
+			for l = 1:nvars(2)
+				% need to have [stim_onset stim_offset], so add delay to 
+				% [0 duration] to compute proper times. then, multiply by 0.001 to
+				% give times in seconds (Dinf values are in milliseconds)
+				stimulus_times{l, f} = 0.001 * (Dinf.audio.Delay + ...
+																	[0 Dinf.audio.Duration]);
+				% if opto is Enabled, add it to the array by concatenation
+				if Dinf.opto.Enable
+					stimulus_times{l, f} = [stimulus_times{l, f}; ...
+														 0.001 * (Dinf.opto.Delay + ...
+																	[0 Dinf.opto.Dur]) ];
+				end
+% 				plotopts.plot_titles{l, f} = sprintf('%d kHz', freq);
+			end
+		end
+
 		plotopts.stimulus_times = stimulus_times;
 		rasterpsthmatrix(spiketimes, plotopts);
-	elseif iseven(nvars)
-		plotopts.plot_titles = reshape(titleString, [prows pcols]);
-		plotopts.stimulus_times = reshape(stimulus_times, [prows pcols]);
-		rasterpsthmatrix(reshape(spiketimes, [prows pcols]), plotopts);
-	else
-		% need to add 'dummy' element to arrays
-	% 	titleString = [titleString; {''}];
-	% 	spiketimes = [spiketimes; {{}}];
-		plotopts.plot_titles = reshape([titleString; {''}], [prows pcols]);
-		plotopts.stimulus_times = ...
-							reshape(	[stimulus_times; stimulus_times{end}], ...
-										[prows pcols]);
-		rasterpsthmatrix(reshape([spiketimes; {{}}], [prows pcols]), plotopts);
+
+		%{
+		% adjust depending on # of columns of plots
+		if nvars(1) <= 5
+			plotopts.plot_titles = titleString;
+			plotopts.stimulus_times = stimulus_times;
+			rasterpsthmatrix(spiketimes, plotopts);
+		elseif iseven(nvars(1))
+			plotopts.plot_titles = reshape(titleString, [prows pcols]);
+			plotopts.stimulus_times = reshape(stimulus_times, [prows pcols]);
+			rasterpsthmatrix(reshape(spiketimes, [prows pcols]), plotopts);
+		else
+			% need to add 'dummy' element to arrays
+		% 	titleString = [titleString; {''}];
+		% 	spiketimes = [spiketimes; {{}}];
+			plotopts.plot_titles = reshape([titleString; {''}], [prows pcols]);
+			plotopts.stimulus_times = ...
+								reshape(	[stimulus_times; stimulus_times{end}], ...
+											[prows pcols]);
+			rasterpsthmatrix(reshape([spiketimes; {{}}], [prows pcols]), plotopts);
+		end		
+		%}
+		
 	end
 	% set plot name
 	set(hPR, 'Name', plotFileName)
@@ -532,7 +584,8 @@ if nargout
 	varargout{1} = D;
 	varargout{2} = Dinf;
 	varargout{3} = struct('spiketimes', {spiketimes}, 'mean_rms', mean_rms, ...
-									'global_max', global_max, 'Threshold', Threshold);
+									'global_max', global_max, 'Threshold', Threshold, ...
+									'nvars', nvars, 'varlist', varlist);
 	varargout{4} = tracesByStim;
 	if plotPSTH
 		varargout{5} = plotopts;

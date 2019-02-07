@@ -54,31 +54,21 @@ else
 end
 % datafile = '1225_20190115_03_02_894_BBN.dat';
 datafile = '1225_20190115_02_01_744_FRA.dat';
-%% Read Data
+%% Read Data (don't plot it though)
 [D, Dinf, spikes, traces] = optoproc('file', fullfile(datapath, datafile), ...
 													'channel', channelNumber);
 
-%% Plot data for one channel, process will vary depending on stimulus type
-
-if strcmpi(Dinf.test.Type, 'FREQ')
-	% time vector for plotting
-	t = (1000/Fs)*((1:length(D{1}.datatrace(:, 1))) - 1);
-	for f = 1:nfreqs
-		dlist = stimindex{f};
-		ntrials = length(dlist);
-		tmpM = zeros(length(D{1}.datatrace(:, 1)), ntrials);
-		for n = 1:ntrials
-			tmpM(:, n) = filtfilt(filtB, filtA, ...
-											D{dlist(n)}.datatrace(:, channelIndex));
-		end
-		stackplot(t, tmpM, 'colormode', 'black');
-		title(sprintf('Channel %d, Freq %d', channelNumber, ...
-									Dinf.test.stimcache.vrange(f)));
-	end
-end
+save('tmpdata.mat', 'D', 'Dinf', 'spikes', 'traces', 'datapath', 'datafile');
 
 %% Plot Level data
 if strcmpi(Dinf.test.Type, 'LEVEL')
+	plotRawLevelData(traces, Dinf);		
+end
+
+%% Plot freq + level data
+
+if strcmpi(Dinf.test.Type, 'FREQ+LEVEL')
+	
 	% time vector for plotting
 	t = (1000/Fs)*((1:length(D{1}.datatrace(:, 1))) - 1);
 	% get overall max value, so all traces can be plotted on same scale
@@ -112,6 +102,7 @@ if strcmpi(Dinf.test.Type, 'LEVEL')
 	end
 		
 end
+
 
 
 %% Plot raster and psth plot across levels
