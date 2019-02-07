@@ -65,45 +65,14 @@ if strcmpi(Dinf.test.Type, 'LEVEL')
 	plotRawLevelData(traces, Dinf);		
 end
 
-%% Plot freq + level data
+%% Plot freq + level data as FRA
+frawin = [Dinf.audio.Delay (Dinf.audio.Delay + Dinf.audio.Duration)];
+freqs = spikes.varlist{1};
+levels = spikes.varlist{2};
 
-if strcmpi(Dinf.test.Type, 'FREQ+LEVEL')
-	
-	% time vector for plotting
-	t = (1000/Fs)*((1:length(D{1}.datatrace(:, 1))) - 1);
-	% get overall max value, so all traces can be plotted on same scale
-	levelData = cell(nlevels, 1);
-	% initialize maxVals
-	maxVals = zeros(nlevels, 1);
-	for l = 1:nlevels
-		dlist = stimindex{l};
-		ntrials = length(dlist);
-		levelData{l} = zeros(length(D{1}.datatrace(:, 1)), ntrials);
-		for n = 1:ntrials
-			levelData{l}(:, n) = filtfilt(filtB, filtA, ...
-											D{dlist(n)}.datatrace(:, channelIndex));
-		end
-		maxVals(l) = max(max(levelData{l}));
-	end
-
-	maxVal = max(maxVals);
-	% stacked data plot
-	for l = 1:nlevels
-		stackplot(t, levelData{l}, 'colormode', 'black', 'Ymax', maxVal);
-		title(sprintf('Channel %d, Level %d', channelNumber, ...
-									Dinf.test.stimcache.vrange(l)));
-	end
-	
-	% overlay plot
-	for l = 1:nlevels
-		overlayplot(t, levelData{l}, 'Ymax', maxVal);
-		title(sprintf('Channel %d, Level %d', channelNumber, ...
-									Dinf.test.stimcache.vrange(l)));
-	end
-		
-end
-
-
+FRA = computeFRA(spikes.spiketimes, freqs, levels, frawin);
+FRA.fname = datafile;
+plotFRA(FRA, 'dB');
 
 %% Plot raster and psth plot across levels
 

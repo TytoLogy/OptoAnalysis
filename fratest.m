@@ -37,72 +37,12 @@ switch upper(Dinf.test.Type)
 		error('%s: unsupported test type %s', mfilename, Dinf.test.Type);
 end
 
-%----------------------------------------------------------------------
-%% Pull out trials, apply filter, store in matrix
-%----------------------------------------------------------------------
+
+%% compute FRA
+
+
+
 %{
- Dinf.test.stimcache
-               stimtype: 'tone'
-              curvetype: 'FREQ+LEVEL'
-             freezeStim: 0
-                  nreps: 10
-               saveStim: 0
-                ntrials: 126
-                 nstims: 1260
-                 repnum: [1260×1 double]
-               trialnum: [1260×1 double]
-                 splval: [1260×1 double]
-                 rmsval: [1260×1 double]
-                  atten: [1260×1 double]
-                   FREQ: [1260×1 double]
-                  LEVEL: [1260×1 double]
-                   opto: {1260×1 cell}
-                radvary: 1
-    trialRandomSequence: [10×126 double]
-                  vname: [70 82 69 81 43 76 69 86 69 76]
-                 vrange: [2×126 double]
-                stimvar: {1×1260 cell}
-%}
-%{
-
-Raw data are in a vector of length nstims, in order of presentation.
-
-values used for the two variables (Freq. and Level) are stored in vrange
-matrix, which is of length (nfreq X nlevel) and holds values as row 1 =
-freq, row 2 = level
-
-e.g.
-
-Dinf.test.stimcache.vrange(:, 1:5) =
-        4000        4000        4000        4000        4000
-           0          10          20          30          40
-
-trialRandomSequence holds randomized list of indices into vrange, has
-dimensions of [nreps, ntrials]
-
-To sort the data for FRA:
-	for each freq and level combination, locate the indices for that
-	combination in the respective FREQ and LEVEL list. 
-	These indices can then be used within the D{} array
-
-
-
-%}
-
-if strcmpi(Dinf.test.Type, 'FREQ+LEVEL')
-	tracesByStim = cell(nlevels, nfreqs);
-	stimindex = cell(nlevels, nfreqs);
-	for f = 1:nfreqs
-		for l = 1:nlevels
-			currentF = freqlist(f);
-			currentL = levellist(l);
-			stimindex{l, f} = find( (Dinf.test.stimcache.FREQ == currentF) & ...
-											(Dinf.test.stimcache.LEVEL == currentL) );
-			tracesByStim{l, f} = D(stimindex{l, f});
-		end
-	end
-end
-
 
 
 %-----------------------------------------------------------------------------
@@ -281,95 +221,7 @@ classdef FRAdata < DW.Data
 		%------------------------------------------------------------------------
 		%------------------------------------------------------------------------
 
-		%------------------------------------------------------------------------
-		%------------------------------------------------------------------------
-		function S = getFRAspikes(obj, varargin)
-		%------------------------------------------------------------------------
-		%
-		%------------------------------------------------------------------------
-		%	'probe', probenum
-		%		'probe' option will select probenum for plotting
-		%	'unit', unitnumber
-		%		'unit' selects unit to display
-		%	'window', [tstart tend]
-		%		species time window for spikes (re: start of sweep) in millisec
-		%
-		%	out is a struct array (with # of elements in array == # freqs)
-		%		out(f).spikes = {# atten vals, 1} cell array of spike times (usec)
-		%		out(f).name = char string with spike name
-		%		out(f).freq = stimulus frequency (Hz)
-		%		out(f).atten = [# atten vals, 1] attenuation values
-		%
-		%------------------------------------------------------------------------
-			
-			%------------------------------------------------
-			% process inputs
-			%------------------------------------------------
-			probenum = 1;
-			unitnum = 0;
-			spwin = [];
-			if ~isempty(varargin)
-				a = 1;
-				while a <= length(varargin)
-					switch upper(varargin{a})	
-						case 'PROBE'
-							probenum = varargin{a+1};
-							a = a + 2;
-						case 'UNIT'
-							unitnum = varargin{a+1};
-							a = a + 2;
-						case 'WINDOW'
-							spwin = varargin{a+1};
-							a = a + 2;
-						otherwise
-							error('%s: unknown option %s', mfilename, varargin{a});
-					end
-				end				
-			end
-			if ~between(probenum, 1, length(obj.Probes))
-				error('%s: probe must be in range [1:%d]', mfilename, ...
-																	length(obj.Probes));
-			end			
-			%----------------------------------------------------------
-			% check if Frequencies and AttenLevels have been found
-			%----------------------------------------------------------
-			if isempty(obj.Frequencies) || isempty(obj.AttenLevels)
-				% if not, find 'em
-				obj.findFreqAndAtten;
-			end			
-			
-			%----------------------------------------------------------
-			% get the spikes struct for probe and unit, and store it
-			%----------------------------------------------------------
-			S = obj.getSpikesForProbe(probenum, 'unit', unitnum);
-			
-			%----------------------------------------------------------
-			% get spikes within analysis window
-			%----------------------------------------------------------
-			% if no values present for window, we're done
-			if isempty(spwin)
-				return
-			end
-			% otherwise, loop through S...
-			
-			for s = 1:length(S)
-				% assign attenuations and frequency
-				
-				% and loop through spikes cell array...
-				for c = 1:length(S(s).spikes)
-					% and loop through reps
-					for r = 1:length(S(s).spikes{c})
-						% and select spikes
-						tmp = find_valid_timestamps( ...
-														S(s).spikes{c}{r}, ...
-														1000 * spwin(1), ...
-														1000 * spwin(2) );
-						S(s).spikes{c}{r} = tmp{1};
-					end
-				end
-			end
-			
-		end	% END getFRA
+	
 		%------------------------------------------------------------------------
 		%------------------------------------------------------------------------
 	
@@ -602,4 +454,4 @@ end	% End of classdef
 
 
 
-
+%}
