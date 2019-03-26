@@ -19,6 +19,9 @@ function varargout = optoproc(varargin)
 %		PLOTTRACES
 %   PLOT_PSTH or			draw plots of PSTHs (1 = yes, 2 = no)
 %		PLOTPSTH	
+%   PLOT_FRA				plot FrequencyResponseArea data
+%   PLOT_RLF				plot RateLevelFunction
+%   PLOT
 %   SAVEFIG					save .fig plots (1 = yes, 2 = no)
 %   SAVEPNG					save plots as .png files (1 = yes, 2 = no)
 %   SAVEPDF					save plots as .pdf files (1 = yes, 2 = no)
@@ -42,7 +45,10 @@ function varargout = optoproc(varargin)
 % Revisions:
 %	22 Jan 19 (SJS): added input arg documentation
 %	7 Feb 19 (SJS): working to streamline processing of data - pulling
-%	operations into separate functions as much as possible
+%						 operations into separate functions as much as possible
+%	26 Mar 19 (SJS): function additions
+% 		- fixed issue in autoRowsCols for nvars
+% 		- added PLOT_FRA
 %--------------------------------------------------------------------------
 
 %---------------------------------------------------------------------
@@ -65,6 +71,8 @@ binSize = 5;
 plotTraces = 0;
 % plotPSTH?
 plotPSTH = 0;
+% Plot FRA?
+plotFRA = 0;
 % SAVE PLOTS?
 saveFIG = 0;
 savePNG = 0;
@@ -132,6 +140,9 @@ if nargin
 			case {'PLOT_PSTH', 'PLOTPSTH'}
 				plotPSTH = 1;
 				argIndx = argIndx + 1;
+			case {'PLOT_FRA', 'PLOTFRA'}
+				plotFRA = 1;
+				argIndx = argIndx + 1;
 			case 'SAVEFIG'
 				saveFIG = 1;
 				argIndx = argIndx + 1;
@@ -179,6 +190,7 @@ if nargin
 				fprintf('\tBINSIZE: %d\n', binSize);
 				fprintf('\tPLOT_TRACES: %d\n', plotTraces);
 				fprintf('\tPLOT_PSTH: %d\n', plotPSTH);
+				fprintf('\tPLOT_FRA: %d\n', plotPSTH);
 				fprintf('\tSAVEFIG: %d\n', saveFIG);
 				fprintf('\tSAVEPNG: %d\n', savePNG);
 				fprintf('\tSAVEPDF: %d\n', savePDF);
@@ -391,7 +403,7 @@ end
 % determine # of columns of plots
 %---------------------------------------------------------------------
 if autoRowCols
-	if numel(nvars) < 1
+	if numel(nvars) == 1
 		if nvars <= 6
 			prows = nvars;
 			pcols = 1;
@@ -530,7 +542,7 @@ if plotPSTH
 														 0.001 * (Dinf.opto.Delay + ...
 																	[0 Dinf.opto.Dur]) ];
 				end
-				plotopts.plot_titles{l, f} = sprintf('%d kHz', freq);
+				plotopts.plot_titles{l, f} = sprintf('%d kHz', varlist{1}(f));
 			end
 		end
 
