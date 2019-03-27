@@ -617,9 +617,6 @@ elseif plotRateLevelFun && any(strcmpi(Dinf.test.Type, {'LEVEL', 'BBN'}))
 			print(hRLF, pname, '-dpng', '-r300');
 		end
 	end	
-else
-	error('optoproc: rate level function plot error (data type: %s)', ...
-											Dinf.test.Type);
 end
 
 %---------------------------------------------------------------------
@@ -655,9 +652,6 @@ elseif plotFreqTunCrv && strcmpi(Dinf.test.Type, 'FREQ')
 			print(hFTC, pname, '-dpng', '-r300');
 		end
 	end	
-else
-	error('optoproc: frequency tuning curve plot error(data type: %s)', ...
-											Dinf.test.Type);
 end
 
 
