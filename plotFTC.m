@@ -67,15 +67,15 @@ H = figure;
 
 % plot mean
 if strcmpi(dataToPlot, 'MEAN')
-	ploterrea(ftcStruct.freqs, ftcStruct.mean, cimatrix);
+	ploterrea(0.001*ftcStruct.freqs, ftcStruct.mean, cimatrix);
 	ylabel('Mean Spike Count');
 % plot median
 else
-	ploterrea(ftcStruct.freqs, ftcStruct.median, cimatrix);
+	ploterrea(0.001*ftcStruct.freqs, ftcStruct.median, cimatrix);
 	ylabel('Median Spike Count');	
 end
 % x label
-xlabel('Frequency')
+xlabel('Frequency (kHz)')
 grid on
 	
 if nargout

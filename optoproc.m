@@ -17,8 +17,10 @@ function varargout = optoproc(varargin)
 %   BINSIZE					binsize for PSTH (ms)
 %   PLOT_TRACES or		draw plots of all individual traces (1 = yes, 2 = no)
 %		PLOTTRACES
-%   PLOT_PSTH or			draw plots of PSTHs (1 = yes, 2 = no)
-%		PLOTPSTH	
+%   PLOT_PSTH or			draw plots of PSTHs (1 = yes, 2 = no) as individual
+%		PLOTPSTH				figures 
+%   PLOT_PSTH_MATRIX		draw plots of PSTHs (1 = yes, 2 = no) as 1 figure
+%		or PLOTPSTHMAT			 
 %   PLOT_RLF				plot Rate-Level Function
 %	 PLOT_FTC				plot Frequency Tuning Curve
 %   PLOT_FRA				plot FrequencyResponseArea data
@@ -33,7 +35,7 @@ function varargout = optoproc(varargin)
 %									([2 3] is 2 rows, 3 cols)
 %	 SHOW_DEFAULTS			show default values for options
 %------------------------------------------------------------------------
-% See Also:
+% See Also: opto, plotFRA, plotRLF, plotFTC
 %------------------------------------------------------------------------
 
 %------------------------------------------------------------------------
@@ -73,6 +75,8 @@ binSize = 5;
 plotTraces = 0;
 % plotPSTH?
 plotPSTH = 0;
+% plotPSTH as matrix?
+plotPSTHMAT = 0;
 % Plot rate level function?
 plotRateLevelFun = 0;
 % Plot frequency tuning curve?
@@ -146,6 +150,9 @@ if nargin
 			case {'PLOT_PSTH', 'PLOTPSTH'}
 				plotPSTH = 1;
 				argIndx = argIndx + 1;
+			case {'PLOT_PSTH_MATRIX', 'PLOTPSTHMAT'}
+				plotPSTHMAT = 1;
+				argIndx = argIndx + 1;
 			case {'PLOT_RLF', 'PLOTRLF', 'RLF'}
 				plotRateLevelFun = 1;
 				argIndx = argIndx + 1;
@@ -202,6 +209,7 @@ if nargin
 				fprintf('\tBINSIZE: %d\n', binSize);
 				fprintf('\tPLOT_TRACES: %d\n', plotTraces);
 				fprintf('\tPLOT_PSTH: %d\n', plotPSTH);
+				fprintf('\tPLOT_PSTH_MATRIX: %d\n', plotPSTHMAT);
 				fprintf('\tPLOT_RLF: %d\n', plotRateLevelFun);
 				fprintf('\tPLOT_FTC: %d\n', plotFreqTunCrv);
 				fprintf('\tPLOT_FRA: %d\n', plotPSTH);
@@ -478,98 +486,18 @@ if plotTraces
 end
 
 %---------------------------------------------------------------------
-% raster, psths
+% raster, psths as matrix
 %---------------------------------------------------------------------
-if plotPSTH
-	hPR = figure;
+if plotPSTHMAT
+	% compute range of time for x axis
 	if isempty(timeLimits)
 		% time vector for plotting
 		t = (1000/Fs)*((1:length(tracesByStim{1}(:, 1))) - 1);
-		plotopts.timelimits = [0 ceil(max(t))];
-	else
-		plotopts.timelimits = timeLimits;
+		timeLimits = [0 ceil(max(t))];
 	end
-	if ~isempty(yLimits)
-		plotopts.psth_ylimits = yLimits;
-	end
-	plotopts.raster_tickmarker = '.';
-	plotopts.raster_ticksize = 16;
-	plotopts.raster_color = [0 0 0];
-	plotopts.psth_binwidth = binSize;
-	plotopts.plotgap = 0.001;
-	plotopts.xlabel = 'msec';
-	plotopts.stimulus_times_plot = 3;
-	plotopts.stimulus_on_color{1} = [0 0 1];
-	plotopts.stimulus_off_color{1} = [0 0 1];
-	plotopts.stimulus_onoff_pct(1) = 60;
-	if Dinf.opto.Enable
-		% add colors for second stimulus
-		plotopts.stimulus_on_color{2} = [1 0 0];
-		plotopts.stimulus_off_color{2} = [1 0 0];
-		plotopts.stimulus_onoff_pct(2) = 80;
-	end
-
-	% create times to indicate stimuli
-	if numel(nvars) == 1
-		stimulus_times = cell(nvars, 1);
-		for v = 1:nvars
-			% need to have [stim_onset stim_offset], so add delay to 
-			% [0 duration] to compute proper times. then, multiply by 0.001 to
-			% give times in seconds (Dinf values are in milliseconds)
-			stimulus_times{v, 1} = 0.001 * (Dinf.audio.Delay + ...
-																[0 Dinf.audio.Duration]);
-			% if opto is Enabled, add it to the array by concatenation
-			if Dinf.opto.Enable
-				stimulus_times{v, 1} = [stimulus_times{v, 1}; ...
-													 0.001 * (Dinf.opto.Delay + ...
-																[0 Dinf.opto.Dur]) ];
-			end
-		end
-
-		% adjust depending on # of columns of plots
-		if nvars <= 5
-			plotopts.plot_titles = titleString;
-			plotopts.stimulus_times = stimulus_times;
-			rasterpsthmatrix(spiketimes, plotopts);
-		elseif iseven(nvars)
-			plotopts.plot_titles = reshape(titleString, [prows pcols]);
-			plotopts.stimulus_times = reshape(stimulus_times, [prows pcols]);
-			rasterpsthmatrix(reshape(spiketimes, [prows pcols]), plotopts);
-		else
-			% need to add 'dummy' element to arrays
-		% 	titleString = [titleString; {''}];
-		% 	spiketimes = [spiketimes; {{}}];
-			plotopts.plot_titles = reshape([titleString; {''}], [prows pcols]);
-			plotopts.stimulus_times = ...
-								reshape(	[stimulus_times; stimulus_times{end}], ...
-											[prows pcols]);
-			rasterpsthmatrix(reshape([spiketimes; {{}}], [prows pcols]), plotopts);
-		end
-	else
-		% for 2D data... might be overkill....
-		stimulus_times = cell(nvars(2), nvars(1));
- 		plotopts.plot_titles = cell(nvars(2), nvars(1));
-		for f = 1:nvars(1)
-			for l = 1:nvars(2)
-				% need to have [stim_onset stim_offset], so add delay to 
-				% [0 duration] to compute proper times. then, multiply by 0.001 to
-				% give times in seconds (Dinf values are in milliseconds)
-				stimulus_times{l, f} = 0.001 * (Dinf.audio.Delay + ...
-																	[0 Dinf.audio.Duration]);
-				% if opto is Enabled, add it to the array by concatenation
-				if Dinf.opto.Enable
-					stimulus_times{l, f} = [stimulus_times{l, f}; ...
-														 0.001 * (Dinf.opto.Delay + ...
-																	[0 Dinf.opto.Dur]) ];
-				end
-				plotopts.plot_titles{l, f} = sprintf('%d kHz', varlist{1}(f));
-			end
-		end
-
-		plotopts.stimulus_times = stimulus_times;
-		rasterpsthmatrix(spiketimes, plotopts);
-		
-	end
+	
+	hPR = plotPSTHMATRIX(spiketimes, Dinf, binSize, nvars, varlist, ...
+									[prows pcols], timeLimits, yLimits, titleString);
 	% set plot name
 	set(hPR, 'Name', plotFileName)
 
@@ -622,21 +550,22 @@ end
 %---------------------------------------------------------------------
 % Frequency tuning curve plot
 %---------------------------------------------------------------------
-if plotFreqTunCrv && strcmpi(Dinf.test.Type,'FREQ+LEVEL')
+if plotFreqTuningCrv && strcmpi(Dinf.test.Type,'FREQ+LEVEL')
 	% not useful for FRA data (at moment - this could be used to plot a
 	% "slice" of the FRA!!!!
 	warning('optoproc: Test type (%s) is FREQ+LEVEL (FRA)!', Dinf.test.Type);
-elseif plotFreqTunCrv && ~strcmpi(Dinf.test.Type, 'FREQ')
+elseif plotFreqTuningCrv && ~strcmpi(Dinf.test.Type, 'FREQ')
 	% other non freq test
 	warning('optoproc: Test type (%s) is not compatible with FTC plot!', ...
 					Dinf.test.Type);
-elseif plotFreqTunCrv && strcmpi(Dinf.test.Type, 'FREQ')
+elseif plotFreqTuningCrv && strcmpi(Dinf.test.Type, 'FREQ')
 	% time window for counting spikes - use Delay to Delay+Duration interval
 	analysisWindow = [Dinf.audio.Delay (Dinf.audio.Delay + Dinf.audio.Duration)];
-	FTC = computeFTC(spiketimes, Dinf.audio.Freqs, analysisWindow);
+	FTC = computeFTC(spiketimes, Dinf.audio.signal.Frequency, analysisWindow);
 	hFTC = plotFTC(FTC, 'median');
 	% build title string
-	tStr = {sprintf('FTC [%d %d] kHz', min(FTC.freqs), max(FTC.freqs)), ...
+	tStr = {sprintf('FTC [%d %d] kHz, %d dB SPL', ...
+								min(FTC.freqs), max(FTC.freqs), Dinf.audio.Level), ...
 					[datafile ', ' sprintf('Channel %d', channelNumber)]};
 	title(tStr, 'Interpreter', 'none');
 	% save plot
