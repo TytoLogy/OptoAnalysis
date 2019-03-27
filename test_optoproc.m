@@ -61,6 +61,8 @@ datafile = '1225_20190115_02_01_744_FRA.dat';
 save('fratestdata.mat', 'D', 'Dinf', 'spikes', 'traces', 'datapath', 'datafile');
 
 %% Plot Level data
+% plotRawLevelData(<trace cell array>, <Dinf struct>) plot raw data traces!
+% what a surprise!
 if strcmpi(Dinf.test.Type, 'LEVEL')
 	plotRawLevelData(traces, Dinf);		
 end
@@ -72,7 +74,7 @@ levels = spikes.varlist{2};
 
 FRA = computeFRA(spikes.spiketimes, freqs, levels, frawin);
 FRA.fname = datafile;
-plotFRA(FRA, 'dB');
+plotFRA(FRA, 'dB', 'Lin_Freq');
 
 %% Plot raster and psth plot across levels
 

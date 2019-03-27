@@ -2,7 +2,7 @@ function varargout = optoproc(varargin)
 %------------------------------------------------------------------------
 % optoproc
 %------------------------------------------------------------------------
-% % TytoLogy:Experiments:OptoAnalysis
+% TytoLogy:Experiments:OptoAnalysis
 %--------------------------------------------------------------------------
 % Processes data collected by the opto program
 %
@@ -72,7 +72,7 @@ plotTraces = 0;
 % plotPSTH?
 plotPSTH = 0;
 % Plot FRA?
-plotFRA = 0;
+plotFreqRespArea = 0;
 % SAVE PLOTS?
 saveFIG = 0;
 savePNG = 0;
@@ -141,7 +141,7 @@ if nargin
 				plotPSTH = 1;
 				argIndx = argIndx + 1;
 			case {'PLOT_FRA', 'PLOTFRA'}
-				plotFRA = 1;
+				plotFreqRespArea = 1;
 				argIndx = argIndx + 1;
 			case 'SAVEFIG'
 				saveFIG = 1;
@@ -379,31 +379,36 @@ end
 % local copy of sample rate
 Fs = Dinf.indev.Fs;
 
-% if test is not FREQ+LEVEL (FRA), nvars will be a single number
-if ~strcmpi(Dinf.test.Type, 'FREQ+LEVEL')
-	spiketimes = cell(nvars, 1);
-	for v = 1:nvars
-		% use rms threshold to find spikes
-		spiketimes{v} = spikeschmitt2(tracesByStim{v}', Threshold*mean_rms, ...
+% different approaches to storage depending on test type
+switch upper(Dinf.test.Type)
+	case 'FREQ+LEVEL'
+		% for FRA data, nvars has values [nfreqs nlevels];
+		spiketimes = cell(nvars(2), nvars(1));
+		for v1 = 1:nvars(1)
+			for v2 = 1:nvars(2)
+				% use rms threshold to find spikes
+				spiketimes{v2, v1} = ...
+						spikeschmitt2(tracesByStim{v2, v1}', Threshold*mean_rms, ...
 																			1, Fs, 'ms');
-	end
-else
-	% for FRA data, nvars has values [nfreqs nlevels];
-	spiketimes = cell(nvars(2), nvars(1));
-	for v1 = 1:nvars(1)
-		for v2 = 1:nvars(2)
-			% use rms threshold to find spikes
-			spiketimes{v2, v1} = ...
-					spikeschmitt2(tracesByStim{v2, v1}', Threshold*mean_rms, ...
-																		1, Fs, 'ms');
+			end
 		end
-	end
+	otherwise
+		% if test is not FREQ+LEVEL (FRA), nvars will be a single number
+		spiketimes = cell(nvars, 1);
+		for v = 1:nvars
+			% use rms threshold to find spikes
+			spiketimes{v} = spikeschmitt2(tracesByStim{v}', Threshold*mean_rms, ...
+																				1, Fs, 'ms');
+		end
 end
+
 %---------------------------------------------------------------------
 % determine # of columns of plots
 %---------------------------------------------------------------------
 if autoRowCols
 	if numel(nvars) == 1
+		% for data that are not "2D" (e.g., FRA), adjust # of columns based
+		% on the number of variable levels or types (nvars)
 		if nvars <= 6
 			prows = nvars;
 			pcols = 1;
@@ -415,6 +420,7 @@ if autoRowCols
 			pcols = 2;
 		end
 	else
+		% otherwise, plot levels in rows, freqs in columns
 		% rows = levels, cols = freqs
 		prows = nvars(2);
 		pcols = nvars(1);
@@ -568,6 +574,22 @@ if plotPSTH
 	end
 end
 
+%---------------------------------------------------------------------
+% FRA plot
+%---------------------------------------------------------------------
+if plotFreqRespArea && ~strcmpi(Dinf.test.Type,'FREQ+LEVEL')
+	% not FRA data
+	warning('optoproc: Test type (%s) is not FREQ+LEVEL (FRA)!', Dinf.test.Type);
+elseif plotFreqRespArea
+	% they are FRA data
+	% window for spike count
+	frawin = [Dinf.audio.Delay (Dinf.audio.Delay + Dinf.audio.Duration)];
+	% calculate FRA stored in struct FRA
+	FRA = computeFRA(spiketimes, varlist{1}, varlist{2}, frawin);
+	% set fname to data file name
+	FRA.fname = datafile;
+	plotFRA(FRA, 'dB');	
+end
 %---------------------------------------------------------------------
 % outputs
 %---------------------------------------------------------------------

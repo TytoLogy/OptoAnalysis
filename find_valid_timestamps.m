@@ -3,6 +3,8 @@ function varargout = find_valid_timestamps(timestamps, winstart, winend, varargi
 % validtimes = find_valid_timestamps(timestamps, winstart, winend)
 % validtimes = find_valid_timestamps(timestamps, winstart, winend, winref)
 %------------------------------------------------------------------------
+% TytoLogy:Experiments:OptoAnalysis
+%------------------------------------------------------------------------
 % locates timestamps that are within the time window given by 
 % winstart and winend.  winstart and winend can be vectors, but must
 % be of the same length!  

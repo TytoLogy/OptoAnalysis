@@ -36,7 +36,7 @@ end
 switch os_type
 	case {'PCWIN', 'PCWIN64'}
 		% assume we are using the opto computer (optocom)
-		data_root_path = 'E:\Data\SJS';
+		data_root_path = 'E:\Data';
 		tytology_root_path = 'C:\TytoLogy';
 
 	case {'MAC', 'MACI', 'GLNXA64', 'MACI64'}
