@@ -19,9 +19,9 @@ function varargout = optoproc(varargin)
 %		PLOTTRACES
 %   PLOT_PSTH or			draw plots of PSTHs (1 = yes, 2 = no)
 %		PLOTPSTH	
+%   PLOT_RLF				plot Rate-Level Function
+%	 PLOT_FTC				plot Frequency Tuning Curve
 %   PLOT_FRA				plot FrequencyResponseArea data
-%   PLOT_RLF				plot RateLevelFunction
-%   PLOT
 %   SAVEFIG					save .fig plots (1 = yes, 2 = no)
 %   SAVEPNG					save plots as .png files (1 = yes, 2 = no)
 %   SAVEPDF					save plots as .pdf files (1 = yes, 2 = no)
@@ -49,6 +49,8 @@ function varargout = optoproc(varargin)
 %	26 Mar 19 (SJS): function additions
 % 		- fixed issue in autoRowsCols for nvars
 % 		- added PLOT_FRA
+%	27 Mar 19 (SJS):
+%		- added PLOT_RLF, PLOT_FTC
 %--------------------------------------------------------------------------
 
 %---------------------------------------------------------------------
@@ -71,6 +73,10 @@ binSize = 5;
 plotTraces = 0;
 % plotPSTH?
 plotPSTH = 0;
+% Plot rate level function?
+plotRateLevelFun = 0;
+% Plot frequency tuning curve?
+plotFreqTuningCrv = 0;
 % Plot FRA?
 plotFreqRespArea = 0;
 % SAVE PLOTS?
@@ -140,7 +146,13 @@ if nargin
 			case {'PLOT_PSTH', 'PLOTPSTH'}
 				plotPSTH = 1;
 				argIndx = argIndx + 1;
-			case {'PLOT_FRA', 'PLOTFRA'}
+			case {'PLOT_RLF', 'PLOTRLF', 'RLF'}
+				plotRateLevelFun = 1;
+				argIndx = argIndx + 1;
+			case {'PLOT_FTC', 'PLOTFTC', 'FTC'}
+				plotFreqTuningCrv = 1;
+				argIndx = argIndx + 1;
+			case {'PLOT_FRA', 'PLOTFRA', 'FRA'}
 				plotFreqRespArea = 1;
 				argIndx = argIndx + 1;
 			case 'SAVEFIG'
@@ -190,6 +202,8 @@ if nargin
 				fprintf('\tBINSIZE: %d\n', binSize);
 				fprintf('\tPLOT_TRACES: %d\n', plotTraces);
 				fprintf('\tPLOT_PSTH: %d\n', plotPSTH);
+				fprintf('\tPLOT_RLF: %d\n', plotRateLevelFun);
+				fprintf('\tPLOT_FTC: %d\n', plotFreqTunCrv);
 				fprintf('\tPLOT_FRA: %d\n', plotPSTH);
 				fprintf('\tSAVEFIG: %d\n', saveFIG);
 				fprintf('\tSAVEPNG: %d\n', savePNG);
@@ -574,6 +588,79 @@ if plotPSTH
 	end
 end
 
+
+%---------------------------------------------------------------------
+% Rate-Level function plot
+%---------------------------------------------------------------------
+if plotRateLevelFun && strcmpi(Dinf.test.Type,'FREQ+LEVEL')
+	% not FRA data
+	warning('optoproc: Test type (%s) is FREQ+LEVEL (FRA)!', Dinf.test.Type);
+elseif plotRateLevelFun && any(strcmpi(Dinf.test.Type, {'LEVEL', 'BBN'}))
+	% time window for counting spikes - use Delay to Delay+Duration interval
+	analysisWindow = [Dinf.audio.Delay (Dinf.audio.Delay + Dinf.audio.Duration)];
+	RLF = computeRLF(spiketimes, Dinf.audio.Level, analysisWindow);
+	hRLF = plotRLF(RLF, 'median');
+	% build title string
+	tStr = {sprintf('RLF [%d %d] dB SPL', min(RLF.levels), max(RLF.levels)), ...
+					[datafile ', ' sprintf('Channel %d', channelNumber)]};
+	title(tStr, 'Interpreter', 'none');
+	% save plot
+	if any([saveFIG savePDF savePNG])
+		pname = fullfile(plotpath, [plotFileName '_RLF']);
+		if saveFIG
+			savefig(hRLF, pname, 'compact');
+		end
+		if savePDF
+			print(hRLF, pname, '-dpdf');
+		end
+		if savePNG
+			print(hRLF, pname, '-dpng', '-r300');
+		end
+	end	
+else
+	error('optoproc: rate level function plot error (data type: %s)', ...
+											Dinf.test.Type);
+end
+
+%---------------------------------------------------------------------
+% Frequency tuning curve plot
+%---------------------------------------------------------------------
+if plotFreqTunCrv && strcmpi(Dinf.test.Type,'FREQ+LEVEL')
+	% not useful for FRA data (at moment - this could be used to plot a
+	% "slice" of the FRA!!!!
+	warning('optoproc: Test type (%s) is FREQ+LEVEL (FRA)!', Dinf.test.Type);
+elseif plotFreqTunCrv && ~strcmpi(Dinf.test.Type, 'FREQ')
+	% other non freq test
+	warning('optoproc: Test type (%s) is not compatible with FTC plot!', ...
+					Dinf.test.Type);
+elseif plotFreqTunCrv && strcmpi(Dinf.test.Type, 'FREQ')
+	% time window for counting spikes - use Delay to Delay+Duration interval
+	analysisWindow = [Dinf.audio.Delay (Dinf.audio.Delay + Dinf.audio.Duration)];
+	FTC = computeFTC(spiketimes, Dinf.audio.Freqs, analysisWindow);
+	hFTC = plotFTC(FTC, 'median');
+	% build title string
+	tStr = {sprintf('FTC [%d %d] kHz', min(FTC.freqs), max(FTC.freqs)), ...
+					[datafile ', ' sprintf('Channel %d', channelNumber)]};
+	title(tStr, 'Interpreter', 'none');
+	% save plot
+	if any([saveFIG savePDF savePNG])
+		pname = fullfile(plotpath, [plotFileName '_FTC']);
+		if saveFIG
+			savefig(hFTC, pname, 'compact');
+		end
+		if savePDF
+			print(hFTC, pname, '-dpdf');
+		end
+		if savePNG
+			print(hFTC, pname, '-dpng', '-r300');
+		end
+	end	
+else
+	error('optoproc: frequency tuning curve plot error(data type: %s)', ...
+											Dinf.test.Type);
+end
+
+
 %---------------------------------------------------------------------
 % FRA plot
 %---------------------------------------------------------------------
@@ -588,8 +675,23 @@ elseif plotFreqRespArea
 	FRA = computeFRA(spiketimes, varlist{1}, varlist{2}, frawin);
 	% set fname to data file name
 	FRA.fname = datafile;
-	plotFRA(FRA, 'dB');	
+	hFRA = plotFRA(FRA, 'dB');
+	
+	% save plot
+	if any([saveFIG savePDF savePNG])
+		pname = fullfile(plotpath, [plotFileName '_FRA']);
+		if saveFIG
+			savefig(hFRA, pname, 'compact');
+		end
+		if savePDF
+			print(hFRA, pname, '-dpdf');
+		end
+		if savePNG
+			print(hFRA, pname, '-dpng', '-r300');
+		end
+	end
 end
+
 %---------------------------------------------------------------------
 % outputs
 %---------------------------------------------------------------------

@@ -74,7 +74,7 @@ levels = spikes.varlist{2};
 
 FRA = computeFRA(spikes.spiketimes, freqs, levels, frawin);
 FRA.fname = datafile;
-plotFRA(FRA, 'dB', 'Lin_Freq');
+plotFRA(FRA, 'dB', 'checker');
 
 %% Plot raster and psth plot across levels
 

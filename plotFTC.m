@@ -1,31 +1,30 @@
-function varargout = plotRLF(rlfStruct, varargin)
+function varargout = plotFTC(ftcStruct, varargin)
 %------------------------------------------------------------------------
 % TytoLogy:Experiments:OptoAnalysis
 %------------------------------------------------------------------------
-% plot rate level function
+% plot frequency tuning curve
 %------------------------------------------------------------------------
-% assumes rlfStruct is in format:
-%		rlfStruct.fname		filename
-% 		rlfStruct.spikeCount	cell array of spike counts/trial at each level
-% 		rlfStruct.levels		stimulus levels
-%		rlfStruct.window		time window [tstart tend] in ms used for analysis
-% 		rlfStruct.mean			mean values at each level
-% 		rlfStruct.std			std. dev. at each level
-% 		rlfStruct.mean_ci		cell array of 95% conf. intervals for mean
-% 		rlfStruct.median		median spike counts at each level
-% 		rlfStruct.median_ci	cell array of 95% conf interval for median
+% assumes ftcStruct is in format:
+%		ftcStruct.fname		filename
+% 		ftcStruct.spikeCount	cell array of spike counts/trial at each freq
+% 		ftcStruct.freqs		stimulus freqs
+%		ftcStruct.window		time window [tstart tend] in ms used for analysis
+% 		ftcStruct.mean			mean values at each freq
+% 		ftcStruct.std			std. dev. at each freq
+% 		ftcStruct.mean_ci		cell array of 95% conf. intervals for mean
+% 		ftcStruct.median		median spike counts at each freq
+% 		ftcStruct.median_ci	cell array of 95% conf interval for median
 %------------------------------------------------------------------------
-% See Also: computeRLF, optoproc, opto
+% See Also: computeFTC, optoproc, opto
 %------------------------------------------------------------------------
  		
 %------------------------------------------------------------------------
 %  Sharad Shanbhag
 %	sshanbhag@neomed.edu
 %------------------------------------------------------------------------
-% Created: 23 Oct 2017 (SJS) 
-%	- adapted from viewOptoData.m
+% Created: 27 Mar 2019  (SJS) 
+%	- adapted from plotRLF.m
 % Revisions:
-%	27 Mar 2019 (SJS): changes for inclusion into optoproc
 %------------------------------------------------------------------------
 
 %---------------------------------------------------------------------
@@ -54,12 +53,12 @@ if nargin > 1
 end
 
 % compute confidence intervals
-cimatrix = zeros(length(rlfStruct.levels), 2);
-for l = 1:length(rlfStruct.levels)
+cimatrix = zeros(length(ftcStruct.freqs), 2);
+for l = 1:length(ftcStruct.freqs)
 	if strcmpi(dataToPlot, 'MEAN')
-		cimatrix(l, :) = rlfStruct.mean_ci{l}';
+		cimatrix(l, :) = ftcStruct.mean_ci{l}';
 	else
-		cimatrix(l, :) = rlfStruct.median_ci{l}';
+		cimatrix(l, :) = ftcStruct.median_ci{l}';
 	end
 end
 
@@ -68,15 +67,15 @@ H = figure;
 
 % plot mean
 if strcmpi(dataToPlot, 'MEAN')
-	ploterrea(rlfStruct.levels, rlfStruct.mean, cimatrix);
+	ploterrea(ftcStruct.freqs, ftcStruct.mean, cimatrix);
 	ylabel('Mean Spike Count');
 % plot median
 else
-	ploterrea(rlfStruct.levels, rlfStruct.median, cimatrix);
+	ploterrea(ftcStruct.freqs, ftcStruct.median, cimatrix);
 	ylabel('Median Spike Count');	
 end
 % x label
-xlabel('dB SPL')
+xlabel('Frequency')
 grid on
 	
 if nargout

@@ -1,6 +1,6 @@
-function plotFRA(FRA, varargin)
+function varargout = plotFRA(FRA, varargin)
 %------------------------------------------------------------------------
-%  plotFRA(FRA, varargin)
+%  H = plotFRA(FRA, varargin)
 %------------------------------------------------------------------------
 % TytoLogy:Experiments:OptoAnalysis
 %------------------------------------------------------------------------
@@ -20,6 +20,9 @@ function plotFRA(FRA, varargin)
 %		'LIN_FREQ'		linear scale frequency axis
 %		'DB_ATTEN'		stimulus level in dB attenuation units (default)
 %		'DB_SPL'			stimulus level in dB SPL
+%
+%  Output Args:
+%	 H		handle to figure
 %------------------------------------------------------------------------
 % See Also: computeFRA, optoproc
 %------------------------------------------------------------------------
@@ -39,7 +42,7 @@ function plotFRA(FRA, varargin)
 	% defaults
 	%------------------------------------------------
 	plotType = 'BOTH';
-	xStr = 'Log Frequency (kHz)';
+	xStr = 'Frequency (kHz)';
 	xUnits = 'LOG';
 	yStr = 'Attenuation (dB)';	
 	yAtten = 1;
@@ -57,12 +60,10 @@ function plotFRA(FRA, varargin)
 					n = n + 1;
 				% log frequency scale
 				case {'LOG_FREQ', 'LOGF', 'LOG'}
-					xStr = 'Log Frequency (kHz)';
 					xUnits = 'LOG';
 					n = n + 1;
 				% linear freq scale
 				case {'LIN_FREQ', 'LINF', 'LIN'}
-					xStr = 'Frequency (kHz)';
 					xUnits = 'LIN';
 					n = n + 1;
 				% y axis is in units of dB attenuation
@@ -85,7 +86,7 @@ function plotFRA(FRA, varargin)
 	% preparatory things
 	%------------------------------------------------
 	% create figure
-	figure
+	H = figure;
 	% log or lin freq?
 	if strcmpi(xUnits, 'LOG')
 		xdata = log10(FRA.Freqs);
@@ -123,12 +124,7 @@ function plotFRA(FRA, varargin)
 					}, ...
 					'Interpreter', 'none');
 		% re-do X tick labels to that they're more readable
-		xt = get(gca, 'XTick');
-		xtl = cell(length(xt), 1);
-	% 	get(gca, 'XTickLabel');
-		for n = 1:length(xt)
-			xtl{n} = sprintf('%.0f', 0.001 * 10^xt(n));
-		end
+		xtl = get_lin_or_log_xlabel(get(gca, 'XTick'), xUnits);
 		set(gca, 'XTickLabel', xtl);
 		% correct the Y tick labels, as promised
 		if yAtten
@@ -150,23 +146,24 @@ function plotFRA(FRA, varargin)
 		xlabel(xStr);
 		ylabel(yStr);
 		zlabel('Spike Count');
-		xt = get(gca, 'XTick');
-		xtl = cell(length(xt), 1);
-	% 	get(gca, 'XTickLabel');
-		for n = 1:length(xt)
-			xtl{n} = sprintf('%.0f', 0.001 * 10^xt(n));
-		end
+		xtl = get_lin_or_log_xlabel(get(gca, 'XTick'), xUnits);
 		set(gca, 'XTickLabel', xtl);
 		if yAtten
 			set(gca, 'YTickLabel', flipud(get(gca, 'YTickLabel')))
 		end
 	end
-
+	
+	%------------------------------------------------
+	% assign output
+	%------------------------------------------------
+	if nargout
+		varargout{1} = H;
+	end
 end
 
 %------------------------------------------------
+% internal function to format tick labels
 %------------------------------------------------
-
 function xtl = get_lin_or_log_xlabel(xt, xUnits)
 
 	xtl = cell(length(xt), 1);
