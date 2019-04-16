@@ -33,6 +33,7 @@ function varargout = optoproc(varargin)
 %   PLOT_FILENAME			user-specified plot file base name (e.g., '1142_unit1')
 %   PLOTROWCOLS			# of rows and columns for plots	
 %									([2 3] is 2 rows, 3 cols)
+%   EXPLORE					open optexplore app
 %	 SHOW_DEFAULTS			show default values for options
 %------------------------------------------------------------------------
 % See Also: opto, plotFRA, plotRLF, plotFTC
@@ -53,6 +54,7 @@ function varargout = optoproc(varargin)
 % 		- added PLOT_FRA
 %	27 Mar 19 (SJS):
 %		- added PLOT_RLF, PLOT_FTC
+%	16 Apr 2019 (SJS): working on better raw data plot using optexplore
 %--------------------------------------------------------------------------
 
 %---------------------------------------------------------------------
@@ -83,6 +85,8 @@ plotRateLevelFun = 0;
 plotFreqTuningCrv = 0;
 % Plot FRA?
 plotFreqRespArea = 0;
+% optexplore??
+exploreData = 0;
 % SAVE PLOTS?
 saveFIG = 0;
 savePNG = 0;
@@ -198,6 +202,9 @@ if nargin
 					error('%s: invalid argument to plotRowsCols %s', tmp);
 				end
 				argIndx = argIndx + 2;
+			case {'EXPLORE', 'OPTEXPLORE'}
+				exploreData = 1;
+				argIndx = argIndx + 1;
 			case 'SHOW_DEFAULTS'
 				fprintf('%s: Default values:\n', mfilename)
 				fprintf('\tDATAFILE: %s\n', datafile);
@@ -447,6 +454,20 @@ if autoRowCols
 		prows = nvars(2);
 		pcols = nvars(1);
 	end
+end
+
+
+%---------------------------------------------------------------------
+% explore raw data
+%---------------------------------------------------------------------
+if exploreData
+	% create struct to pass to optexplore
+	exData.traces = tracesByStim;
+	exData.spikes = spiketimes;
+	exData.Dinf = Dinf;
+	exData.varlist = varlist;
+	exData.nvars = nvars;
+	optexplore(exData);
 end
 
 %---------------------------------------------------------------------
