@@ -6,6 +6,23 @@ function varargout = computeRLF(spikeTimes, levels, analysisWindow)
 % 		spikeTimes{nLevels, 1}
 % 			spikeTimes{n} = {nTrials, 1}
 % 				spikeTimes{n}{t} = [spike1_ms spike2_ms spike3ms ...
+%
+% Output:
+%  curveStruct			struct with fields:
+%		curveStruct.fname			filename
+% 		curveStruct.spikeCount	cell array of spike counts/trial at each x
+% 		curveStruct.xdata			stimulus freqs
+%		curveStruct.xlabel		label for x axis
+%		curveStruct.window		time window [tstart tend] in ms used for analysis
+% 		curveStruct.mean			mean values at each freq
+% 		curveStruct.std			std. dev. at each freq
+% 		curveStruct.mean_ci		cell array of 95% conf. intervals for mean
+% 		curveStruct.median		median spike counts at each freq
+% 		curveStruct.median_ci	cell array of 95% conf interval for median
+%------------------------------------------------------------------------
+% See Also: plotCurveAndCI, optoproc, opto
+%------------------------------------------------------------------------
+
 %------------------------------------------------------------------------
 %  Sharad Shanbhag
 %	sshanbhag@neomed.edu
@@ -15,18 +32,20 @@ function varargout = computeRLF(spikeTimes, levels, analysisWindow)
 % 
 % Revisions:
 %	22 Jan 2019 (SJS): added levels as input
+%	28 Mar 2019 (SJS): updated to output curveStruct for use with
+%								plotCurveAndCI()
 %------------------------------------------------------------------------
-
 
 nLevels = length(levels);
 spikeCount = cell(nLevels, 1);
-rlf.levels = levels;
-rlf.window = analysisWindow;
-rlf.mean = zeros(nLevels, 1);
-rlf.std = zeros(nLevels, 1);
-rlf.mean_ci = cell(nLevels, 1);
-rlf.median = zeros(nLevels, 1);
-rlf.median_ci = cell(nLevels, 1);
+curveStruct.xdata = levels;
+curveStruct.xlabel = 'dB SPL';
+curveStruct.window = analysisWindow;
+curveStruct.mean = zeros(nLevels, 1);
+curveStruct.std = zeros(nLevels, 1);
+curveStruct.mean_ci = cell(nLevels, 1);
+curveStruct.median = zeros(nLevels, 1);
+curveStruct.median_ci = cell(nLevels, 1);
 
 for n = 1:nLevels
 	nReps = length(spikeTimes{n});
@@ -35,15 +54,15 @@ for n = 1:nLevels
 		spikeCount{n}(r) = sum(between(spikeTimes{n}{r}, analysisWindow(1), ...
 																analysisWindow(2) ) );
 	end
-	rlf.mean(n) = mean(spikeCount{n}); 
-	rlf.std(n) = std(spikeCount{n});
-	rlf.mean_ci{n} = bootci(2000, @mean, spikeCount{n});
-	rlf.median(n) = median(spikeCount{n});
-	rlf.median_ci{n} = bootci(2000, @median, spikeCount{n});
+	curveStruct.mean(n) = mean(spikeCount{n}); 
+	curveStruct.std(n) = std(spikeCount{n});
+	curveStruct.mean_ci{n} = bootci(2000, @mean, spikeCount{n});
+	curveStruct.median(n) = median(spikeCount{n});
+	curveStruct.median_ci{n} = bootci(2000, @median, spikeCount{n});
 end
-rlf.spikeCount = spikeCount;
+curveStruct.spikeCount = spikeCount;
 
-varargout{1} = rlf;
+varargout{1} = curveStruct;
 
 if nargout > 1
 	varargout{2} = spikeCount;

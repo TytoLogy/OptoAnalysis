@@ -525,9 +525,9 @@ elseif plotRateLevelFun && any(strcmpi(Dinf.test.Type, {'LEVEL', 'BBN'}))
 	% time window for counting spikes - use Delay to Delay+Duration interval
 	analysisWindow = [Dinf.audio.Delay (Dinf.audio.Delay + Dinf.audio.Duration)];
 	RLF = computeRLF(spiketimes, Dinf.audio.Level, analysisWindow);
-	hRLF = plotRLF(RLF, 'median');
+	hRLF = plotCurveAndCI(RLF, 'median');
 	% build title string
-	tStr = {sprintf('RLF [%d %d] dB SPL', min(RLF.levels), max(RLF.levels)), ...
+	tStr = {sprintf('RLF [%d %d] dB SPL', min(RLF.xdata), max(RLF.xdata)), ...
 					[datafile ', ' sprintf('Channel %d', channelNumber)]};
 	title(tStr, 'Interpreter', 'none');
 	% set plot name
@@ -562,10 +562,10 @@ elseif plotFreqTuningCrv && strcmpi(Dinf.test.Type, 'FREQ')
 	% time window for counting spikes - use Delay to Delay+Duration interval
 	analysisWindow = [Dinf.audio.Delay (Dinf.audio.Delay + Dinf.audio.Duration)];
 	FTC = computeFTC(spiketimes, Dinf.audio.signal.Frequency, analysisWindow);
-	hFTC = plotFTC(FTC, 'median');
+	hFTC = plotCurveAndCI(FTC, 'median');
 	% build title string
 	tStr = {sprintf('FTC [%d %d] kHz, %d dB SPL', ...
-								min(FTC.freqs), max(FTC.freqs), Dinf.audio.Level), ...
+								min(FTC.xdata), max(FTC.xdata), Dinf.audio.Level), ...
 					[datafile ', ' sprintf('Channel %d', channelNumber)]};
 	title(tStr, 'Interpreter', 'none');
     % set plot name
