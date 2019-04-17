@@ -500,7 +500,6 @@ if plotPSTHMAT
 									[prows pcols], timeLimits, yLimits, titleString);
 	% set plot name
 	set(hPR, 'Name', plotFileName)
-
 	% save plot
 	if any([saveFIG savePDF savePNG])
 		pname = fullfile(plotpath, [plotFileName '_rp']);
@@ -531,7 +530,9 @@ elseif plotRateLevelFun && any(strcmpi(Dinf.test.Type, {'LEVEL', 'BBN'}))
 	tStr = {sprintf('RLF [%d %d] dB SPL', min(RLF.levels), max(RLF.levels)), ...
 					[datafile ', ' sprintf('Channel %d', channelNumber)]};
 	title(tStr, 'Interpreter', 'none');
-	% save plot
+	% set plot name
+	set(hRLF, 'Name', plotFileName);
+    % save plot
 	if any([saveFIG savePDF savePNG])
 		pname = fullfile(plotpath, [plotFileName '_RLF']);
 		if saveFIG
@@ -567,6 +568,8 @@ elseif plotFreqTuningCrv && strcmpi(Dinf.test.Type, 'FREQ')
 								min(FTC.freqs), max(FTC.freqs), Dinf.audio.Level), ...
 					[datafile ', ' sprintf('Channel %d', channelNumber)]};
 	title(tStr, 'Interpreter', 'none');
+    % set plot name
+	set(hFTC, 'Name', plotFileName);
 	% save plot
 	if any([saveFIG savePDF savePNG])
 		pname = fullfile(plotpath, [plotFileName '_FTC']);
@@ -598,7 +601,9 @@ elseif plotFreqRespArea
 	% set fname to data file name
 	FRA.fname = datafile;
 	hFRA = plotFRA(FRA, 'dB');
-	
+    % set plot name
+	set(hFRA, 'Name', plotFileName);
+% 	set(hFRA, 'FileName', plotFileName);
 	% save plot
 	if any([saveFIG savePDF savePNG])
 		pname = fullfile(plotpath, [plotFileName '_FRA']);
