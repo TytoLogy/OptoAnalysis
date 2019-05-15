@@ -22,7 +22,7 @@ function varargout = optexplore(varargin)
 
 % Edit the above text to modify the response to help optexplore
 
-% Last Modified by GUIDE v2.5 15-May-2019 14:40:20
+% Last Modified by GUIDE v2.5 15-May-2019 15:24:30
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -107,12 +107,16 @@ function optexplore_Init(hObject, handles)
 			H.spikes = handles.inArgs{1}.spikes;
 			H.varlist = handles.inArgs{1}.varlist;
 			H.nvars = handles.inArgs{1}.nvars;
+			H.dataLoaded = 1;
 		end
 	end
 	
 	% store H in handles
 	handles.H = H;
 	guidata(hObject, handles);
+	
+	% update gui
+	% updateGui(hObject, handles);
 	
 %--------------------------------------------------------------------------
 
@@ -159,6 +163,12 @@ function popSweep_Callback(hObject, eventdata, handles)
 
 %--------------------------------------------------------------------
 %--------------------------------------------------------------------
+function menuFile_Callback(hObject, eventdata, handles)
+
+
+
+%--------------------------------------------------------------------
+%--------------------------------------------------------------------
 function menuOpenFile_Callback(hObject, eventdata, handles)
 	% get data file from user
 	[datafile, datapath] = ...
@@ -173,6 +183,8 @@ function menuOpenFile_Callback(hObject, eventdata, handles)
 		handles.H.datafile = datafile;
 		handles.H.datapath = datapath;
 		handles.H.data_root_path = datapath;
+		update_ui_str(handles.fileInfo, ...
+								fullfile(handles.H.datapath, handles.H.datafile));
 		guidata(hObject, handles);
 	end	
 
@@ -185,40 +197,74 @@ function menuOpenFile_Callback(hObject, eventdata, handles)
 		warning('%s: D is empty???!!!??!!', mfilename);
 		handles.H.dataLoaded = false;
 		return
-	else
-		handles.H.D = D;
-		handles.H.Dinf = Dinf;
-		handles.H.tracesByStim = tracesByStim;
-		handles.H.dataLoaded = true;
-		guidata(hObject, handles);
+	end
+	handles.H.D = D;
+	handles.H.Dinf = Dinf;
+	handles.H.traces = tracesByStim;
+	handles.H.dataLoaded = true;
+	handles.H.finfo = parse_dat_filename(handles.H.datafile);
+	guidata(hObject, handles);
+
+	% Some test-specific things...
+	switch upper(Dinf.test.Type)
+		case 'FREQ'
+			% list of frequencies, and # of freqs tested
+			varlist = Dinf.test.stimcache.vrange;
+			nvars = length(varlist);
+			titleString = cell(nvars, 1);
+			for v = 1:nvars
+				if v == 1
+					titleString{v} = {fname, ...
+											sprintf('Frequency = %.0f kHz', 0.001*varlist(v))};
+				else
+					titleString{v} = sprintf('Frequency = %.0f kHz', 0.001*varlist(v));
+				end
+			end
+		case 'LEVEL'
+			% list of levels, and # of levels tested
+			varlist = Dinf.test.stimcache.vrange;
+			nvars = length(varlist);
+			titleString = cell(nvars, 1);
+			for v = 1:nvars
+				if v == 1
+					titleString{v} = {fname, sprintf('Level = %d dB SPL', varlist(v))};
+				else
+					titleString{v} = sprintf('Level = %d dB SPL', varlist(v));
+				end
+			end
+		case 'FREQ+LEVEL'
+			% list of freq, levels
+			varlist = cell(2, 1);
+			% # of freqs in nvars(1), # of levels in nvars(2)
+			nvars = zeros(2, 1);
+			for v = 1:2
+				varlist{v} = unique(Dinf.test.stimcache.vrange(v, :), 'sorted');
+				nvars(v) = length(varlist{v});
+			end
+			titleString = fname;
+		case 'OPTO'
+			% not yet implemented
+		case 'WAVFILE'
+			% get list of stimuli (wav file names)
+			varlist = Dinf.test.wavlist;
+			nvars = length(varlist);
+			titleString = cell(nvars, 1);
+			for v = 1:nvars
+				if v == 1 
+					titleString{v} = {fname, sprintf('wav name: %s', varlist{v})};
+				else
+					titleString{v} = sprintf('wav name: %s', varlist{v});
+				end
+			end
+		otherwise
+			error('%s: unsupported test type %s', mfilename, Dinf.test.Type);
 	end
 
-%---------------------------------------------------------------------
-% get info from filename - this makes some assumptions about file
-% name structure!
-% <animal id #>_<date>_<penetration #>_<unit #>_<other info>.dat
-%---------------------------------------------------------------------
-% break up file name into <fname>.<ext> (~ means don't save ext info)
-[~, fname] = fileparts(datafile);
-% locate underscores in fname
-usc = find(fname == '_');
-% location of start and end underscore indices
-%    abcde_edcba
-%        ^ ^
-%        | |
-%        | ---- endusc index
-%        ---startusc index
-endusc = usc - 1;
-startusc = usc + 1;
-animal = fname(1:endusc(1));
-datecode = fname(startusc(1):endusc(2));
-penetration = fname(startusc(2):endusc(3)); %#ok<NASGU>
-unit = fname(startusc(3):endusc(4)); %#ok<NASGU>
-other = fname(startusc(end):end); %#ok<NASGU>
+	handles.H.varlist = varlist;
+	handles.H.titleString = titleString;
+	handles.H.nvars = nvars;
 
-if isempty(plotFileName)
-	plotFileName = fname;
-end
+
 %--------------------------------------------------------------------
 
 
@@ -249,4 +295,3 @@ end
 
 %------------------------------------------------------------------------------
 %------------------------------------------------------------------------------
-
