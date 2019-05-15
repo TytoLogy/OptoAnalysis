@@ -462,9 +462,9 @@ end
 %---------------------------------------------------------------------
 if exploreData
 	% create struct to pass to optexplore
+	exData.Dinf = Dinf;
 	exData.traces = tracesByStim;
 	exData.spikes = spiketimes;
-	exData.Dinf = Dinf;
 	exData.varlist = varlist;
 	exData.nvars = nvars;
 	optexplore(exData);

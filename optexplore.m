@@ -22,7 +22,7 @@ function varargout = optexplore(varargin)
 
 % Edit the above text to modify the response to help optexplore
 
-% Last Modified by GUIDE v2.5 16-Apr-2019 16:37:48
+% Last Modified by GUIDE v2.5 15-May-2019 14:40:20
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -65,22 +65,55 @@ function optexplore_OpeningFcn(hObject, eventdata, handles, varargin)
 
 	% assign data from varargin
 	if ~isempty(varargin)
-		handles.H = varargin{1};
+		handles.inArgs = varargin{1};
 	else
-		handles.H = [];
+		handles.inArgs = [];
 	end
 	guidata(hObject, handles);
 	
 	optexplore_Init(hObject, handles);
 	
 	% UIWAIT makes optexplore wait for user response (see UIRESUME)
-	% uiwait(handles.figure1);
+	% uiwait(handles.figOptExplore);
 %--------------------------------------------------------------------------
 
+%--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 function optexplore_Init(hObject, handles)
-	
 
+	H = struct( ...
+			'data_root_path', '', ...
+			'tytology_root_path', '', ...
+			'dataLoaded', 0, ...
+			'D', [], ...
+			'Dinf', [], ...
+			'traces', [], ...
+			'spikes', [], ...
+			'varlist', [], ...
+			'nvars', [], ...
+			'threshold', [] ...
+			);
+		
+	% need to get information about system
+	[H.data_root_path, H.tytology_root_path] = optoanalysis_paths;
+	
+	% check input args
+	if ~isempty(handles.inArgs)
+		% check if input args were provided
+		if isstruct(handles.inArgs{1})
+			H.D = [];
+			H.Dinf = handles.inArgs{1}.Dinf;
+			H.traces = handles.inArgs{1}.traces;
+			H.spikes = handles.inArgs{1}.spikes;
+			H.varlist = handles.inArgs{1}.varlist;
+			H.nvars = handles.inArgs{1}.nvars;
+		end
+	end
+	
+	% store H in handles
+	handles.H = H;
+	guidata(hObject, handles);
+	
 %--------------------------------------------------------------------------
 
 %--------------------------------------------------------------------------
@@ -102,19 +135,95 @@ function varargout = optexplore_OutputFcn(hObject, eventdata, handles)
 % CALLBACKS
 %------------------------------------------------------------------------------
 %--------------------------------------------------------------------------
-% --- Executes on selection change in listStim.
-function listStim_Callback(hObject, eventdata, handles)
-% hObject    handle to listStim (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
 
-% Hints: contents = cellstr(get(hObject,'String')) returns listStim contents as cell array
+%--------------------------------------------------------------------------
+function listStim_Callback(hObject, eventdata, handles)
+% Hints: contents = cellstr(get(hObject,'String')) returns listStim
+%			contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from listStim
 %--------------------------------------------------------------------------
 
+%--------------------------------------------------------------------------
+function popSweep_Callback(hObject, eventdata, handles)
+% Hints: contents = cellstr(get(hObject,'String')) returns popSweep contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from popSweep
+
+
+
+%------------------------------------------------------------------------------
+%------------------------------------------------------------------------------
+%------------------------------------------------------------------------------
+% Menu FUNCTIONS
 %------------------------------------------------------------------------------
 %------------------------------------------------------------------------------
 
+%--------------------------------------------------------------------
+%--------------------------------------------------------------------
+function menuOpenFile_Callback(hObject, eventdata, handles)
+	% get data file from user
+	[datafile, datapath] = ...
+									uigetfile('*.dat', 'Select opto data file', ...
+														handles.H.data_root_path);
+	% abort if cancelled...
+	if datafile == 0
+		fprintf('Cancelled\n');
+		return
+	% or store info
+	else
+		handles.H.datafile = datafile;
+		handles.H.datapath = datapath;
+		handles.H.data_root_path = datapath;
+		guidata(hObject, handles);
+	end	
+
+	% Read Data and store in handles
+	[D, Dinf, tracesByStim] = getFilteredOptoData( ...
+											fullfile(datapath, datafile), ...
+											'Filter', [HPFreq LPFreq], ...
+											'Channel', channelNumber);
+	if isempty(D)
+		warning('%s: D is empty???!!!??!!', mfilename);
+		handles.H.dataLoaded = false;
+		return
+	else
+		handles.H.D = D;
+		handles.H.Dinf = Dinf;
+		handles.H.tracesByStim = tracesByStim;
+		handles.H.dataLoaded = true;
+		guidata(hObject, handles);
+	end
+
+%---------------------------------------------------------------------
+% get info from filename - this makes some assumptions about file
+% name structure!
+% <animal id #>_<date>_<penetration #>_<unit #>_<other info>.dat
+%---------------------------------------------------------------------
+% break up file name into <fname>.<ext> (~ means don't save ext info)
+[~, fname] = fileparts(datafile);
+% locate underscores in fname
+usc = find(fname == '_');
+% location of start and end underscore indices
+%    abcde_edcba
+%        ^ ^
+%        | |
+%        | ---- endusc index
+%        ---startusc index
+endusc = usc - 1;
+startusc = usc + 1;
+animal = fname(1:endusc(1));
+datecode = fname(startusc(1):endusc(2));
+penetration = fname(startusc(2):endusc(3)); %#ok<NASGU>
+unit = fname(startusc(3):endusc(4)); %#ok<NASGU>
+other = fname(startusc(end):end); %#ok<NASGU>
+
+if isempty(plotFileName)
+	plotFileName = fname;
+end
+%--------------------------------------------------------------------
+
+
+%------------------------------------------------------------------------------
+%------------------------------------------------------------------------------
 %------------------------------------------------------------------------------
 % CREATE FUNCTIONS
 %------------------------------------------------------------------------------
@@ -126,5 +235,18 @@ function listStim_CreateFcn(hObject, eventdata, handles)
 												get(0,'defaultUicontrolBackgroundColor'))
 		 set(hObject,'BackgroundColor','white');
 	end
+% --- Executes during object creation, after setting all properties.
+function popSweep_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to popSweep (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
 %------------------------------------------------------------------------------
 %------------------------------------------------------------------------------
+
