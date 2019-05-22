@@ -548,7 +548,8 @@ if plotPSTH
 	end
 	
 	if strcmpi(Dinf.test.Type, 'WAVFILE')
-		optoproc_plotPSTH_WAV(spiketimes, Dinf, binSize, nvars, varlist, timeLimits, yLimits, titleString);
+		save wavproc.mat
+% 		optoproc_plotPSTH_WAV(spiketimes, Dinf, binSize, nvars, varlist, timeLimits, yLimits, titleString);
 	end
 % 	% set plot name
 % 	set(hPR, 'Name', plotFileName)
@@ -682,6 +683,8 @@ if nargout
 									'nvars', nvars, 'varlist', {varlist});
 	varargout{4} = tracesByStim;
 	if plotPSTH
-		varargout{5} = plotopts;
+		if exist('plotopts', 'var')
+			varargout{5} = plotopts;
+		end
 	end
 end

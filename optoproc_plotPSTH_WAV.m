@@ -1,7 +1,7 @@
-function varargout = optoproc_plotPSTH(spiketimes, Dinf, binSize, nvars, varlist, ...
+function varargout = optoproc_plotPSTH_WAV(spiketimes, Dinf, binSize, nvars, varlist, ...
 												timeLimits, yLimits, titleString)
 %------------------------------------------------------------------------
-%  H = optoproc_plotPSTH(spiketimes, Dinf, nvars, varlist, timeLimits, ...
+%  H = optoproc_plotPSTH_WAV(spiketimes, Dinf, binSize, nvars, varlist, timeLimits, ...
 %												yLimits, titleString)
 %------------------------------------------------------------------------
 % TytoLogy:Experiments:OptoAnalysis
@@ -26,8 +26,9 @@ function varargout = optoproc_plotPSTH(spiketimes, Dinf, binSize, nvars, varlist
 % Revisions:
 %------------------------------------------------------------------------
 
-% # of plots
+% # of unique plots
 nplots = size(spiketimes);
+
 
 % create array to hold figure handles
 hPR = cell(nplots, 1);
