@@ -537,6 +537,37 @@ if plotPSTHMAT
 end
 
 %---------------------------------------------------------------------
+% raster, psths individually
+%---------------------------------------------------------------------
+if plotPSTH
+	% compute range of time for x axis
+	if isempty(timeLimits)
+		% time vector for plotting
+		t = (1000/Fs)*((1:length(tracesByStim{1}(:, 1))) - 1);
+		timeLimits = [0 ceil(max(t))];
+	end
+	
+	if strcmpi(Dinf.test.Type, 'WAVFILE')
+		optoproc_plotPSTH_WAV(spiketimes, Dinf, binSize, nvars, varlist, timeLimits, yLimits, titleString);
+	end
+% 	% set plot name
+% 	set(hPR, 'Name', plotFileName)
+% 	% save plot
+% 	if any([saveFIG savePDF savePNG])
+% 		pname = fullfile(plotpath, [plotFileName '_rp']);
+% 		if saveFIG
+% 			savefig(hPR, pname, 'compact');
+% 		end
+% 		if savePDF
+% 			print(hPR, pname, '-dpdf');
+% 		end
+% 		if savePNG
+% 			print(hPR, pname, '-dpng', '-r300');
+% 		end
+% 	end
+end
+
+%---------------------------------------------------------------------
 % Rate-Level function plot
 %---------------------------------------------------------------------
 if plotRateLevelFun && strcmpi(Dinf.test.Type,'FREQ+LEVEL')
