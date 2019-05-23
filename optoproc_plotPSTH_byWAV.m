@@ -1,32 +1,30 @@
-%% load data
+function varargout = optoproc_plotPSTH_byWAV(spikesByStim, Dinf, binSize, ...
+												timeLimits, yLimits)
 %------------------------------------------------------------------------
-dname = '/Users/sshanbhag/Work/Data/Mouse/IC/1302/20190507';
-fname = '1302_20190507_03_03_711.9_WAV.dat';
+%  H = optoproc_plotPSTH_WAV(spikesByStim, Dinf, binSize, timeLimits, ...
+%												yLimits)
+%------------------------------------------------------------------------
+% TytoLogy:Experiments:OptoAnalysis
+%------------------------------------------------------------------------
+% 
+%------------------------------------------------------------------------
+%  Input Args:
+%	 
+%
+%  Output Args:
+%	 H		handle to figure
+%------------------------------------------------------------------------
+% See Also: computeFRA, optoproc
+%------------------------------------------------------------------------
 
-		optoproc('file', fullfile(dname, fname), 'plotPSTH');
-
-%{
-if ~exist('D', 'var')
-	if ~exist('wavproc.mat', 'file')
-		% optoproc has been modified temporarily to save mat file of 
-		% data/info in 'wavproc.mat' when plotPSTH is specified
-		optoproc('file', fullfile(dname, fname), 'plotPSTH');
-	end
-% 	load('wavproc.mat')
-end
-%}
-
 %------------------------------------------------------------------------
+%  Sharad Shanbhag
+%   sshanbhag@neomed.edu
 %------------------------------------------------------------------------
-% -----------rest is optoproc_plotPSTH_WAV code 
-%------------------------------------------------------------------------
-%------------------------------------------------------------------------
-%  H = optoproc_plotPSTH_WAV(spiketimes, Dinf, binSize, nvars, varlist, timeLimits, ...
-%												yLimits, titleString)
-% note nvars, varlist might be redundant!
-% * change spiketimes to spikesByStim?
-% title string not necessary?
-%------------------------------------------------------------------------
+% Created: 22 May 2019 (SJS), adapting from plotPSTHMATRIX
+%
+% Revisions:
+% 23 May 2019 (SJS): working... ???
 %------------------------------------------------------------------------
 
 
@@ -37,7 +35,7 @@ end
 % get unique stimuli in order they appear in stimList using 'stable' option
 % iA will be indices of first occurrence of each unique stim
 % iC will identify which of the unique stim is in each row
-[uniqueStim, iA, iC]  = unique(Dinf.test.wavlist, 'stable');
+[uniqueStim, ~, iC]  = unique(Dinf.test.wavlist, 'stable');
 nStim = numel(uniqueStim);
 % create list of indices into stimList, spiketimes for each stimulus 
 % (will use later for many things)
@@ -89,7 +87,7 @@ end
 %------------------------------------------------------------------------
 
 % create array to hold figure handles
-hPR = cell(nUnique, 1);
+hPR = cell(nStim, 1);
 
 % global options for raster and psth matrix
 plotopts.timelimits = timeLimits;
@@ -119,20 +117,20 @@ end
 
 
 % plot name
-[fpath, fname, fext] = fileparts(strrep(Dinf.filename, '\', '/'));
+[~, fname, fext] = fileparts(strrep(Dinf.filename, '\', '/'));
 fname = [fname fext];
 
-	% titles for stimuli
-	varlist = Dinf.test.wavlist;
-	nvars = length(varlist);
-	titleString = cell(nvars, 1);
-	for v = 1:nvars
-		if v == 1 
-			titleString{v} = {fname, sprintf('wav name: %s', varlist{v})};
-		else
-			titleString{v} = sprintf('wav name: %s', varlist{v});
-		end
+% titles for stimuli
+varlist = Dinf.test.wavlist;
+nvars = length(varlist);
+titleString = cell(nvars, 1);
+for v = 1:nvars
+	if v == 1 
+		titleString{v} = {fname, sprintf('wav name: %s', varlist{v})};
+	else
+		titleString{v} = sprintf('wav name: %s', varlist{v});
 	end
+end
 
 
 
@@ -152,7 +150,7 @@ for s = 1:nStim
 															[0 Dinf.audio.Duration]);
 		% if opto is Enabled, add it to the array by concatenation
 		if Dinf.opto.Enable
-			plotopts.stimulus_times{s, 1} = [stimulus_times{s, 1}; ...
+			plotopts.stimulus_times{s, 1} = [plotopts.stimulus_times{s, 1}; ...
 												 0.001 * (Dinf.opto.Delay + ...
 															[0 Dinf.opto.Dur]) ];
 		end
@@ -169,11 +167,16 @@ for s = 1:nStim
 
 	% assign figure index
 	hPR{s} = figure;
-	
+
 	% assign spikes
 	Spikes = cell(nLevels(s), 1);
 	for l = 1:nLevels(s)
-		Spikes{l} = spiketimes{stimIndices{s}(l)};
+		Spikes{l} = spikesByStim{stimIndices{s}(l)};
 	end
 	rasterpsthmatrix(Spikes, plotopts);
+end
+
+
+if nargout
+	varargout{1} = hPR;
 end

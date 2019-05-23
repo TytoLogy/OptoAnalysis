@@ -537,9 +537,10 @@ if plotPSTHMAT
 end
 
 %---------------------------------------------------------------------
-% raster, psths individually
+% raster, psths individually ***** debugging 23 May 2019 ****
 %---------------------------------------------------------------------
 if plotPSTH
+	
 	% compute range of time for x axis
 	if isempty(timeLimits)
 		% time vector for plotting
@@ -548,8 +549,8 @@ if plotPSTH
 	end
 	
 	if strcmpi(Dinf.test.Type, 'WAVFILE')
-		save wavproc.mat
-% 		optoproc_plotPSTH_WAV(spiketimes, Dinf, binSize, nvars, varlist, timeLimits, yLimits, titleString);
+		hPR = optoproc_plotPSTH_byWAV(spiketimes, Dinf, binSize, ...
+									timeLimits, yLimits);
 	end
 % 	% set plot name
 % 	set(hPR, 'Name', plotFileName)
