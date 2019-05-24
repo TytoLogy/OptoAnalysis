@@ -2,6 +2,7 @@
 %------------------------------------------------------------------------
 dname = '/Users/sshanbhag/Work/Data/Mouse/IC/1302/20190507/';
 fname = '1302_20190507_03_03_711.9_WAV.dat';
+fname = '1302_20190507_02_03_185.5_WAV.dat';
 
 %%
 
@@ -24,7 +25,10 @@ tmp = optoproc_plotPSTH_WAVbyLevel(spikesByStim, Dinf, binSize, ...
 
 %% test within optoproc
 
-optoproc('file', fullfile(dname, fname), 'PLOT_PSTH_BY_LEVEL');
+optoproc('file', fullfile(dname, fname), 'PLOT_PSTH_BY_LEVEL', 'Threshold', 3);
+
+%%
+optoproc('file', fullfile(dname, fname), 'PLOT_PSTH');
 
 %% test script code
 %------------------------------------------------------------------------

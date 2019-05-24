@@ -117,8 +117,8 @@ end
 
 % plot name
 % need to replace back slash by front slash for UNIXy OSes
-[~, fname, fext] = fileparts(strrep(Dinf.filename, '\', '/'));
-fname = [fname fext];
+[~, fbase, fext] = fileparts(strrep(Dinf.filename, '\', '/'));
+fname = [fbase fext];
 
 % titles for stimuli
 varlist = Dinf.test.wavlist;
