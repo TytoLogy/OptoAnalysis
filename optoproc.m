@@ -19,6 +19,8 @@ function varargout = optoproc(varargin)
 %		PLOTTRACES
 %   PLOT_PSTH or			draw plots of PSTHs (1 = yes, 2 = no) as individual
 %		PLOTPSTH				figures 
+%   PLOT_PSTH_BY_LEVEL	draw plots of PSTHs (1 = yes, 2 = no) grouped by
+%		or PLOTPSTHBYLEVEL			stimulus level
 %   PLOT_PSTH_MATRIX		draw plots of PSTHs (1 = yes, 2 = no) as 1 figure
 %		or PLOTPSTHMAT			 
 %   PLOT_RLF				plot Rate-Level Function
@@ -55,6 +57,7 @@ function varargout = optoproc(varargin)
 %	27 Mar 19 (SJS):
 %		- added PLOT_RLF, PLOT_FTC
 %	16 Apr 2019 (SJS): working on better raw data plot using optexplore
+%	23-24 May 2019 (SJS): added things to plot WAV psths
 %--------------------------------------------------------------------------
 
 %---------------------------------------------------------------------
@@ -77,6 +80,8 @@ binSize = 5;
 plotTraces = 0;
 % plotPSTH?
 plotPSTH = 0;
+% plotPSTH separated by level?
+plotPSTH_BY_LEVEL = 0;
 % plotPSTH as matrix?
 plotPSTHMAT = 0;
 % Plot rate level function?
@@ -154,6 +159,10 @@ if nargin
 			case {'PLOT_PSTH', 'PLOTPSTH'}
 				plotPSTH = 1;
 				argIndx = argIndx + 1;
+			case {'PLOT_PSTH_BY_LEVEL', 'PLOTPSTHBYLEVEL'}
+				plotPSTH = 1;
+				plotPSTH_BY_LEVEL = 1;
+				argIndx = argIndx + 1;
 			case {'PLOT_PSTH_MATRIX', 'PLOTPSTHMAT'}
 				plotPSTHMAT = 1;
 				argIndx = argIndx + 1;
@@ -216,6 +225,7 @@ if nargin
 				fprintf('\tBINSIZE: %d\n', binSize);
 				fprintf('\tPLOT_TRACES: %d\n', plotTraces);
 				fprintf('\tPLOT_PSTH: %d\n', plotPSTH);
+				fprintf('\tPLOT_PSTH_BY_LEVEL: %d\n', plotPSTH_BY_LEVEL);
 				fprintf('\tPLOT_PSTH_MATRIX: %d\n', plotPSTHMAT);
 				fprintf('\tPLOT_RLF: %d\n', plotRateLevelFun);
 				fprintf('\tPLOT_FTC: %d\n', plotFreqTunCrv);
@@ -537,6 +547,50 @@ if plotPSTHMAT
 end
 
 %---------------------------------------------------------------------
+% raster, psths individually ***** debugging 23 May 2019 ****
+%---------------------------------------------------------------------
+if plotPSTH
+	
+	% compute range of time for x axis
+	if isempty(timeLimits)
+		% time vector for plotting
+		t = (1000/Fs)*((1:length(tracesByStim{1}(:, 1))) - 1);
+		timeLimits = [0 ceil(max(t))];
+	end
+	
+	if strcmpi(Dinf.test.Type, 'WAVFILE')
+		if plotPSTH_BY_LEVEL
+			hPR = optoproc_plotPSTH_WAVbyLevel(spiketimes, Dinf, binSize, ...
+									[prows pcols], timeLimits, yLimits);			
+		else
+			hPR = optoproc_plotPSTH_byWAV(spiketimes, Dinf, binSize, ...
+									timeLimits, yLimits);
+		end
+	end
+	% save plot
+	if any([saveFIG savePDF savePNG])
+		for f = 1:length(hPR)
+			if isempty(get(hPR{f}, 'FileName'))
+				[pname, pfolder] = uiputfile(fullfile(plotpath, plotFileName), ...
+														'Save plot');
+				pname = fullfile(pfolder, pname);
+			else
+				pname = fullfile(plotpath, get(hPR{f}, 'FileName'));
+			end
+			if saveFIG
+				savefig(hPR, pname, 'compact');
+			end
+			if savePDF
+				print(hPR, pname, '-dpdf');
+			end
+			if savePNG
+				print(hPR, pname, '-dpng', '-r300');
+			end
+			end
+	end
+end
+
+%---------------------------------------------------------------------
 % Rate-Level function plot
 %---------------------------------------------------------------------
 if plotRateLevelFun && strcmpi(Dinf.test.Type,'FREQ+LEVEL')
@@ -651,6 +705,8 @@ if nargout
 									'nvars', nvars, 'varlist', {varlist});
 	varargout{4} = tracesByStim;
 	if plotPSTH
-		varargout{5} = plotopts;
+		if exist('plotopts', 'var')
+			varargout{5} = plotopts;
+		end
 	end
 end
