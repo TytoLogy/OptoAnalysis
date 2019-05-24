@@ -115,8 +115,8 @@ if Dinf.opto.Enable
 	plotopts.stimulus_onoff_pct(2) = 80;
 end
 
-
 % plot name
+% need to replace back slash by front slash for UNIXy OSes
 [~, fname, fext] = fileparts(strrep(Dinf.filename, '\', '/'));
 fname = [fname fext];
 
@@ -132,8 +132,7 @@ for v = 1:nvars
 	end
 end
 
-
-
+% Loop through stim
 for s = 1:nStim	
 	% check on levels and stimIndices
 	if nLevels(s) ~= length(stimIndices{s})
@@ -174,6 +173,11 @@ for s = 1:nStim
 		Spikes{l} = spikesByStim{stimIndices{s}(l)};
 	end
 	rasterpsthmatrix(Spikes, plotopts);
+	% replace '.' in fbase with 'p' for similar reasons
+	set(hPR{s}, 'Name', sprintf('%s_%s', strrep(fbase, '.', 'p'), ...
+												uniqueStim{s}));
+	set(hPR{s}, 'FileName', sprintf('%s_%s', strrep(fbase, '.', 'p'), ...
+												uniqueStim{s}));
 end
 
 
