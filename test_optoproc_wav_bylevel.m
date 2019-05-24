@@ -16,6 +16,12 @@ end
 
 spikesByStim = spiketimes;
 
+
+tmp = optoproc_plotPSTH_WAVbyLevel(spikesByStim, Dinf, binSize, ...
+												[], timeLimits, yLimits)
+
+%%
+optoproc('file', fullfile(dname, fname), 'PLOT_PSTH_BY_LEVEL');
 %------------------------------------------------------------------------
 %------------------------------------------------------------------------
 % -----------rest is optoproc_plotPSTH_WAV code 
@@ -36,7 +42,7 @@ nrowcols = [];
 % get unique stimuli in order they appear in stimList using 'stable' option
 % iA will be indices of first occurrence of each unique stim
 % iC will identify which of the unique stim is in each row
-[uniqueStim, iA, iC]  = unique(Dinf.test.wavlist, 'stable');
+[uniqueStim, ~, iC]  = unique(Dinf.test.wavlist, 'stable');
 nStim = numel(uniqueStim);
 % create list of indices into stimList, spiketimes for each stimulus 
 % (will use later for many things)

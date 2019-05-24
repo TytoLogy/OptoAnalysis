@@ -560,27 +560,33 @@ if plotPSTH
 	
 	if strcmpi(Dinf.test.Type, 'WAVFILE')
 		if plotPSTH_BY_LEVEL
-			hPR = optoproc_plotPSTH_byWAV(spiketimes, Dinf, binSize, ...
-									timeLimits, yLimits);
-		else
 			hPR = optoproc_plotPSTH_WAVbyLevel(spiketimes, Dinf, binSize, ...
 									[prows pcols], timeLimits, yLimits);			
+		else
+			hPR = optoproc_plotPSTH_byWAV(spiketimes, Dinf, binSize, ...
+									timeLimits, yLimits);
 		end
 	end
-	% set plot name
-	set(hPR, 'Name', plotFileName)
 	% save plot
 	if any([saveFIG savePDF savePNG])
-		pname = fullfile(plotpath, [plotFileName '_rp']);
-		if saveFIG
-			savefig(hPR, pname, 'compact');
-		end
-		if savePDF
-			print(hPR, pname, '-dpdf');
-		end
-		if savePNG
-			print(hPR, pname, '-dpng', '-r300');
-		end
+		for f = 1:length(hPR)
+			if isempty(get(hPR{f}, 'FileName'))
+				[pname, pfolder] = uiputfile(fullfile(plotpath, plotFileName), ...
+														'Save plot');
+				pname = fullfile(pfolder, pname);
+			else
+				pname = fullfile(plotpath, get(hPR{f}, 'FileName'));
+			end
+			if saveFIG
+				savefig(hPR, pname, 'compact');
+			end
+			if savePDF
+				print(hPR, pname, '-dpdf');
+			end
+			if savePNG
+				print(hPR, pname, '-dpng', '-r300');
+			end
+			end
 	end
 end
 
