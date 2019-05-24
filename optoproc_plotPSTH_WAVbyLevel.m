@@ -232,7 +232,7 @@ for l = 1:max(nLevels)
 	set(hPR{l}, 'Name', sprintf('%s_%ddB', strrep(fbase, '.', 'p'), ...
 												Dinf.test.Level(l)));
 	set(hPR{l}, 'FileName', sprintf('%s_%ddB', strrep(fbase, '.', 'p'), ...
-												fbase, Dinf.test.Level(l)));
+												Dinf.test.Level(l)));
 end
 
 if nargout

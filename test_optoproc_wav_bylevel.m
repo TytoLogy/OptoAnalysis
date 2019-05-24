@@ -1,7 +1,9 @@
 %% load data
 %------------------------------------------------------------------------
-dname = '/Users/sshanbhag/Work/Data/Mouse/IC/1302/20190507';
+dname = '/Users/sshanbhag/Work/Data/Mouse/IC/1302/20190507/';
 fname = '1302_20190507_03_03_711.9_WAV.dat';
+
+%%
 
 %		optoproc('file', fullfile(dname, fname), 'plotPSTH');
 
@@ -9,19 +11,22 @@ if ~exist('D', 'var')
 	if ~exist('wavproc.mat', 'file')
 		% optoproc has been modified temporarily to save mat file of 
 		% data/info in 'wavproc.mat' when plotPSTH is specified
-		optoproc('file', fullfile(dname, fname), 'plotPSTH');
+		% optoproc('file', fullfile(dname, fname), 'plotPSTH');
 	end
  	load('wavproc.mat')
 end
 
 spikesByStim = spiketimes;
 
-
+%% test function alone
 tmp = optoproc_plotPSTH_WAVbyLevel(spikesByStim, Dinf, binSize, ...
 												[], timeLimits, yLimits)
 
-%%
+%% test within optoproc
+
 optoproc('file', fullfile(dname, fname), 'PLOT_PSTH_BY_LEVEL');
+
+%% test script code
 %------------------------------------------------------------------------
 %------------------------------------------------------------------------
 % -----------rest is optoproc_plotPSTH_WAV code 
