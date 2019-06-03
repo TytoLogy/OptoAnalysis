@@ -67,8 +67,8 @@ datafile = '';
 plotpath_base = ''; 
 userPLOTPATH = 0;
 % filter
-HPFreq = 350;
-LPFreq = 6500;
+HPFreq = 300;
+LPFreq = 4000;
 % RMS spike threshold
 % Threshold = 4.5;
 Threshold = 3;

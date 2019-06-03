@@ -25,3 +25,4 @@ tip: you can specify file to save time:
 	optoproc('file', <<file with path>>, ....other options....)
 	e.g. optoproc('file', 'D:\dirname\anotherdir\data\9999\9999_20210701_234_WAV.dat', ...)
 	
+optoproc('file', 'E:\Data\EphysData\1301\20190510\1301_20190510_01_02_133.5_WAV.dat', 'PLOT_PSTH_BY_LEVEL')
