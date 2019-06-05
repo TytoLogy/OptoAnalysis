@@ -716,6 +716,10 @@ if nargout
 	if plotPSTH
 		if exist('plotopts', 'var')
 			varargout{5} = plotopts;
+		else
+			varargout{5} = [];
 		end
+	else
+		varargout{5} = [];
 	end
 end
