@@ -1,6 +1,6 @@
 function varargout = optoproc(varargin)
 %------------------------------------------------------------------------
-% optoproc
+% [D, Dinf, S, T, P] = optoproc(see help)
 %------------------------------------------------------------------------
 % TytoLogy:Experiments:OptoAnalysis
 %--------------------------------------------------------------------------
@@ -37,6 +37,14 @@ function varargout = optoproc(varargin)
 %									([2 3] is 2 rows, 3 cols)
 %   EXPLORE					open optexplore app
 %	 SHOW_DEFAULTS			show default values for options
+% 
+% 	Outputs:
+% 
+% 		D			raw data, cell
+% 		Dinf		data information struct
+% 		S			spike data, struct
+% 		T			data traces, sorted by stimulus, cell
+% 		P			plot options, struct
 %------------------------------------------------------------------------
 % See Also: opto, plotFRA, plotRLF, plotFTC
 %------------------------------------------------------------------------
@@ -58,6 +66,7 @@ function varargout = optoproc(varargin)
 %		- added PLOT_RLF, PLOT_FTC
 %	16 Apr 2019 (SJS): working on better raw data plot using optexplore
 %	23-24 May 2019 (SJS): added things to plot WAV psths
+%	5 Jun 2019 (SJS): added comments in help, working on tone rate level
 %--------------------------------------------------------------------------
 
 %---------------------------------------------------------------------
