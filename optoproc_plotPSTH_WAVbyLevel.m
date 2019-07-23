@@ -202,22 +202,23 @@ for l = 1:max(nLevels)
 
 	% allocate Spikes cell array to hold spiketimes for stimuli
 	Spikes = cell(nrowcols(1), nrowcols(2));
-	% init stimulus index
-	s = 1;
+
 	% loop through stimuli (in rows and cols)
 	for r = 1:nrowcols(1)
 		for c = 1:nrowcols(2)
-			% assign spikes - need to account for NULL stimulus if present,
-			% since there will be only 1 level for the NULL stim...
-			if hasNULL && (s == nullIndex)
-				% only 1 level for null stimulus
-				Spikes{r, c} = spikesByStim{stimIndices{s}(1)};
-			else
-				% check on levels and stimIndices
-				if nLevels(s) ~= length(stimIndices{s})
-					error('%s: mismatch in nLevels and stimIndices', mfilename);
+			if s <= nStim
+				% assign spikes - need to account for NULL stimulus if present,
+				% since there will be only 1 level for the NULL stim...
+				if hasNULL && (s == nullIndex)
+					% only 1 level for null stimulus
+					Spikes{r, c} = spikesByStim{stimIndices{s}(1)};
+				else
+					% check on levels and stimIndices
+					if nLevels(s) ~= length(stimIndices{s})
+						error('%s: mismatch in nLevels and stimIndices', mfilename);
+					end
+					Spikes{r, c} = spikesByStim{stimIndices{s}(l)};
 				end
-				Spikes{r, c} = spikesByStim{stimIndices{s}(l)};
 			end
 			% increment stimulus index
 			s = s + 1;

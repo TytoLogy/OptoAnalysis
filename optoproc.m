@@ -35,7 +35,7 @@ function varargout = optoproc(varargin)
 %   PLOT_FILENAME			user-specified plot file base name (e.g., '1142_unit1')
 %   PLOTROWCOLS			# of rows and columns for plots	
 %									([2 3] is 2 rows, 3 cols)
-%   EXPLORE					open optexplore app
+%   EXPLORE					open optexplore app (not yet working 23 Jul 2019)
 %	 SHOW_DEFAULTS			show default values for options
 % 
 % 	Outputs:
@@ -67,6 +67,7 @@ function varargout = optoproc(varargin)
 %	16 Apr 2019 (SJS): working on better raw data plot using optexplore
 %	23-24 May 2019 (SJS): added things to plot WAV psths
 %	5 Jun 2019 (SJS): added comments in help, working on tone rate level
+%	23 Jun 2019 (SJS): fixed issue when # of wav stimuli are odd
 %--------------------------------------------------------------------------
 
 %---------------------------------------------------------------------

@@ -7,8 +7,9 @@
 dname = '/Users/sshanbhag/Desktop/20190722';
 fname = '1323_20190722_01_02_508_WAV.dat';
 
-%		optoproc('file', fullfile(dname, fname), 'plotPSTH');
+optoproc('file', fullfile(dname, fname), 'PLOT_PSTH_BY_LEVEL');
 
+%%
 if ~exist('D', 'var')
 	if ~exist('wavproc.mat', 'file')
 		% optoproc has been modified temporarily to save mat file of 
