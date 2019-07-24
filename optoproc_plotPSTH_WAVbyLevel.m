@@ -95,19 +95,22 @@ hPR = cell(max(nLevels), 1);
 
 % determine rows, columns if necessary
 if isempty(nrowcols)
-	if numel(nStim) == 1
-		% for data that are not "2D" (e.g., FRA), adjust # of columns based
-		% on the number of variable levels or types (nvars)
-		if nStim <= 6
-			nrowcols = [nStim 1];
-		elseif iseven(nStim)
-			nrowcols = [nStim/2  2];
-		else
-			nrowcols = [ceil(nStim/2) 2];
-		end
-	else
-		error('%s: not written to handle 2 dim nStim', mfilename);
-	end
+	nrowcols = optoproc_figure_plotrowcol(nStim);
+% 	if numel(nStim) == 1
+% 		% for data that are not "2D" (e.g., FRA), adjust # of columns based
+% 		% on the number of variable levels or types (nvars)
+% 		
+% 		% need to determine how many columns
+% 		if nStim <= 6
+% 			nrowcols = [nStim 1];
+% 		elseif iseven(nStim)
+% 			nrowcols = [nStim/2  2];
+% 		else
+% 			nrowcols = [ceil(nStim/2) 2];
+% 		end
+% 	else
+% 		error('%s: not written to handle 2 dim nStim', mfilename);
+% 	end
 end
 
 % global options for raster and psth matrix

@@ -5,8 +5,8 @@
 % fname = '1302_20190507_03_03_711.9_WAV.dat';
 
 dname = '/Users/sshanbhag/Desktop/20190722';
-fname = '1323_20190722_01_02_508_WAV.dat';
-
+% fname = '1323_20190722_01_02_508_WAV.dat';
+fname = '1323_20190722_02_02_583_WAV.dat';
 optoproc('file', fullfile(dname, fname), 'PLOT_PSTH_BY_LEVEL');
 
 %%
