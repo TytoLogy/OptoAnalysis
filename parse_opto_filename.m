@@ -17,7 +17,9 @@ function F = parse_opto_filename(filename)
 % Created: 11 October, 2017
 %
 % Revisions:
-%	9 Aug 2019 (SJS): penetration and unit are reversed
+%	9 Aug 2019 (SJS): 
+%		penetration and unit are reversed: fixed
+%		added rec depth
 %------------------------------------------------------------------------
 % See Also: opto_createDataFileName
 %------------------------------------------------------------------------
@@ -46,4 +48,7 @@ F.datecode = fname(startusc(1):endusc(2));
 F.unit = fname(startusc(2):endusc(3));
 % penetration number
 F.penetration = fname(startusc(3):endusc(4));
+% recording depth
+F.depth = fname(startusc(4):endusc(5));
+% this should be test name
 F.other = fname(startusc(end):end);
