@@ -1,8 +1,5 @@
-function varargout = optoproc_plotPSTH_WAVbyLevel(spikesByStim, Dinf, binSize, ...
-												nrowcols, timeLimits, yLimits)
+function varargout = computeSpikeCount(spikesByStim, Dinf, countWindow)
 %------------------------------------------------------------------------
-%  H = optoproc_plotPSTH_WAVbyLevel(spikesByStim, Dinf, binSize, ...
-% 												nrowcols, timeLimits, yLimits)
 %------------------------------------------------------------------------
 % TytoLogy:Experiments:OptoAnalysis
 %------------------------------------------------------------------------
@@ -12,25 +9,20 @@ function varargout = optoproc_plotPSTH_WAVbyLevel(spikesByStim, Dinf, binSize, .
 %	 spikesByStim		cell array of spiketimes, organized by stimulus type
 %							and level
 %	 Dinf					data information struct
-%	 binSize				size of histogram bins, milliseconds
-%	 nrowcols			[nrows ncols] for plotting
-%	 timeLimits			xaxis limits for plots [min max]
-%	 yLimits				yaxis limits for plots [min max]
 %
 %  Output Args:
-%	 H		handle to figure
 %------------------------------------------------------------------------
-% See Also: computeFRA, optoproc
+% See Also: computeFRA, optoproc, optoproc_plotPSTH_WAVbyLevel
 %------------------------------------------------------------------------
 
 %------------------------------------------------------------------------
 %  Sharad Shanbhag
 %   sshanbhag@neomed.edu
 %------------------------------------------------------------------------
-% Created: 24 May 2019 (SJS), adapting from plotPSTHMATRIX & plotPSTH_WAV
+% Created: 10 August 2019 (SJS), adapting from optoproc_plotPSTH_WAVbyLevel
 %
 % Revisions:
-% % title string not necessary?
+% 
 %------------------------------------------------------------------------
 
 nrowcols = [];

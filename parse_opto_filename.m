@@ -7,7 +7,7 @@ function F = parse_opto_filename(filename)
 % extracts information from opto filename
 %
 %------------------------------------------------------------------------
-% See Also:
+% See Also: opto_createDataFileName
 %------------------------------------------------------------------------
 
 %------------------------------------------------------------------------
@@ -20,8 +20,6 @@ function F = parse_opto_filename(filename)
 %	9 Aug 2019 (SJS): 
 %		penetration and unit are reversed: fixed
 %		added rec depth
-%------------------------------------------------------------------------
-% See Also: opto_createDataFileName
 %------------------------------------------------------------------------
 
 if isempty(filename)

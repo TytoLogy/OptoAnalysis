@@ -364,6 +364,7 @@ fprintf('\tMean rms: %.4f\n', mean_rms);
 global_max = max(max(maxvals));
 fprintf('\tGlobal max abs value: %.4f\n', global_max);
 
+
 %---------------------------------------------------------------------
 % Some test-specific things...
 %---------------------------------------------------------------------
@@ -623,7 +624,7 @@ elseif plotRateLevelFun && any(strcmpi(Dinf.test.Type, {'LEVEL', 'BBN'}))
 		if saveFIG
 			savefig(hRLF, pname, 'compact');
 		end
-		if savePDF
+		if savePDF	
 			print(hRLF, pname, '-dpdf');
 		end
 		if savePNG
@@ -708,12 +709,22 @@ end
 % outputs
 %---------------------------------------------------------------------
 if nargout
+	% raw traces
 	varargout{1} = D;
+	% data information
 	varargout{2} = Dinf;
-	varargout{3} = struct('spiketimes', {spiketimes}, 'mean_rms', mean_rms, ...
-									'global_max', global_max, 'Threshold', Threshold, ...
-									'nvars', nvars, 'varlist', {varlist});
+	% analysis output
+	varargout{3} = struct(	'spiketimes', {spiketimes}, ...
+									'netrmsvals', netrmsvals, ...
+									'maxvals', maxvals, ...
+									'mean_rms', mean_rms, ...
+									'global_max', global_max, ...
+									'Threshold', Threshold, ...
+									'nvars', nvars, ...
+									'varlist', {varlist}		);
+	% raw traces by stimulus
 	varargout{4} = tracesByStim;
+	% plot options
 	if plotPSTH
 		if exist('plotopts', 'var')
 			varargout{5} = plotopts;
