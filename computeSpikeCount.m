@@ -1,4 +1,4 @@
-function varargout = computeSpikeCount(spikesByStim, Dinf, countWindow)
+% function varargout = computeSpikeCount(spikesByStim, Dinf, Winf, countWindow)
 %------------------------------------------------------------------------
 %------------------------------------------------------------------------
 % TytoLogy:Experiments:OptoAnalysis
@@ -25,12 +25,14 @@ function varargout = computeSpikeCount(spikesByStim, Dinf, countWindow)
 % 
 %------------------------------------------------------------------------
 
-nrowcols = [];
+% hard wav stimulus onset, milliseconds
+WAV_ONSET = 45;
+% fixed latency for adding to stimulus offset for spike count, milliseconds
+FIXED_LATENCY = 0;
 
 %------------------------------------------------------------------------
-%% first, get information about stimuli
+% first, get information about stimuli
 %------------------------------------------------------------------------
-
 % get unique stimuli in order they appear in stimList using 'stable' option
 % iA will be indices of first occurrence of each unique stim
 % iC will identify which of the unique stim is in each row
@@ -52,191 +54,79 @@ else
 end
 
 %------------------------------------------------------------------------
-% first way
+% need to determine stimulus level information
 %------------------------------------------------------------------------
-% dbLevels = Dinf.test.Level;
-
-%------------------------------------------------------------------------
-% second way
-%------------------------------------------------------------------------
-% create cell array to store levels for each stim (might be different
-% number of levels for each stim, so can't use array)
-dbLevelsByStim = cell(nStim, 1);
-nLevels = zeros(nStim, 1);
-% loop through stim
-fprintf('Determining Stimulus Levels...\n');
-for s = 1:nStim
-	% ASSUME that repeats of same stimulus are at different levels...
-	nLevels(s) = length(stimIndices{s});
-	dbLevelsByStim{s} = zeros(nLevels(s), 1);
-	fprintf('\tStimulus: %s\n', uniqueStim{s});
-	fprintf('\t\tnLevels: %d\n', nLevels(s));
-	fprintf('\t\tLevels: ');
-	for l = 1:nLevels(s)
-		dbLevelsByStim{s}(l) = Dinf.stimList(stimIndices{s}(l)).audio.Level;
-		fprintf('%d  ', Dinf.stimList(stimIndices{s}(l)).audio.Level);
-	end
-	fprintf('\n');
-end
-
+[dbLevelsByStim, nLevels] = opto_find_stimlevels(uniqueStim, stimIndices, Dinf);
 % need to check nlevels
 if hasNULL && length(unique(nLevels(nullIndex))) > 1
 	warning('odd mismatch in expected levels for NULL stimulus');
 end
 
 %------------------------------------------------------------------------
-%% setup plots / options
+% setup 
 %------------------------------------------------------------------------
 
-% create array to hold figure handles - assume max(nLevels) is correct
-hPR = cell(max(nLevels), 1);
-
-% determine rows, columns if necessary
-if isempty(nrowcols)
-	nrowcols = optoproc_figure_plotrowcol(nStim);
-% 	if numel(nStim) == 1
-% 		% for data that are not "2D" (e.g., FRA), adjust # of columns based
-% 		% on the number of variable levels or types (nvars)
-% 		
-% 		% need to determine how many columns
-% 		if nStim <= 6
-% 			nrowcols = [nStim 1];
-% 		elseif iseven(nStim)
-% 			nrowcols = [nStim/2  2];
-% 		else
-% 			nrowcols = [ceil(nStim/2) 2];
-% 		end
-% 	else
-% 		error('%s: not written to handle 2 dim nStim', mfilename);
-% 	end
-end
-
-% global options for raster and psth matrix
-plotopts.timelimits = timeLimits;
-% assign y axis limits if provided
-if ~isempty(yLimits)
-	plotopts.psth_ylimits = yLimits;
-end
-
-% options for raster and psth matrix
-plotopts.raster_tickmarker = '.';
-plotopts.raster_ticksize = 16;
-plotopts.raster_color = [0 0 0];
-plotopts.psth_binwidth = binSize;
-plotopts.plotgap = 0.001;
-plotopts.vertgap = 0.035;
-plotopts.xlabel = 'msec';
-plotopts.stimulus_times_plot = 3;
-plotopts.stimulus_on_color{1} = [0 0 1];
-plotopts.stimulus_off_color{1} = [0 0 1];
-plotopts.stimulus_onoff_pct(1) = 60;
-% add on off bars for opto stim
-if Dinf.opto.Enable
-	% add colors for second stimulus
-	plotopts.stimulus_on_color{2} = [1 0 0];
-	plotopts.stimulus_off_color{2} = [1 0 0];
-	plotopts.stimulus_onoff_pct(2) = 80;
-end
-
-% plot name
-% need to replace back slash by front slash for UNIXy OSes
-[~, fbase, fext] = fileparts(strrep(Dinf.filename, '\', '/'));
-fname = [fbase fext];
-
-% titles for stimuli
-varlist = Dinf.test.wavlist;
-nvars = length(varlist);
-titleString = cell(nvars, 1);
-for v = 1:nvars
-	if v == 1 
-		titleString{v} = {fname, sprintf('wav name: %s', varlist{v})};
-	else
-		titleString{v} = sprintf('wav name: %s', varlist{v});
-	end
-end
+% create array to hold raw spike counts is correct
+C = cell(nStim, max(nLevels));
 
 % build list of stimulus times
-% create list of stimulus times
-plotopts.stimulus_times = cell(nrowcols(1), nrowcols(2));
-s = 1;
-for r = 1:nrowcols(1)
-	for c = 1:nrowcols(2)
-		if s <= nStim
-			% need to have [stim_onset stim_offset], so add delay to 
-			% [0 duration] to compute proper times. then, multiply by 0.001 to
-			% give times in seconds (Dinf values are in milliseconds)
-			plotopts.stimulus_times{r, c} = 0.001 * (Dinf.audio.Delay + ...
-															[0 Dinf.audio.Duration]);
-			% if opto is Enabled, add it to the array by concatenation
-			if Dinf.opto.Enable
-				plotopts.stimulus_times{r, c} = [plotopts.stimulus_times{r, c}; ...
-																0.001 * (Dinf.opto.Delay + ...
-																[0 Dinf.opto.Dur]) ];
+stimOnsetOffset = zeros(nStim, 2);
+for s = 1:nStim
+	switch uniqueStim{s}
+		case 'null'
+			% for null stimulus use whole window
+			onset = 0;
+			offset = Dinf.test.AcqDuration;
+		case 'BBN'
+			% for BBN, use [delay delay+duration]
+			onset = Winf.noise.Delay;
+			offset = Winf.noise.Delay + Winf.noise.Duration + FIXED_LATENCY;
+		otherwise
+			% for WAV, need to be specific so find index to wavInfo
+			wx = strcmp([uniqueStim{s} '.wav'], {Winf.wavInfo.Filename});
+			if isempty(wx)
+				error('%s: could not find %s in wavInfo!', ...
+										mfilename, uniqueStim{s})
 			end
-		end
-		s = s + 1;
+			W = Winf.wavInfo(wx);
+			onset = Dinf.audio.Delay + WAV_ONSET;
+			offset = onset + bin2ms(W.OffsetBin, W.SampleRate) + FIXED_LATENCY;
 	end
+	% store onset/offset
+	stimOnsetOffset(s, :) = [onset ceil(offset)];
 end
 
-% create plot titles
-plotopts.plot_titles = cell(nrowcols(1), nrowcols(2));
-s = 1;
-for r = 1:nrowcols(1)
-	for c = 1:nrowcols(2)
-		if s <= nStim
-			plotopts.plot_titles{r, c} = {sprintf('%s', uniqueStim{s})};
-		end
-		s = s + 1;
-	end
-end
+%% process data
+
 
 % loop through levels
 for l = 1:max(nLevels)
-	% reset stimulus index
-	s = 1;
-	
-	% add level to 1st plot titles (will be odd for NULL stim, but no easy
-	% alternative... also, this assumes that levels are uniform
-	plotopts.plot_titles{1, 1} = ...
-					{	sprintf('%s  %d dB SPL', fname, Dinf.test.Level(l)) ...
-						sprintf('%s', uniqueStim{s})};
+	for s = 1:nStim
+		fprintf('%d dB SPL\t\t', Dinf.test.Level(l));
+		fprintf('%s\n', uniqueStim{s});
 
-	% allocate Spikes cell array to hold spiketimes for stimuli
-	Spikes = cell(nrowcols(1), nrowcols(2));
-
-	% loop through stimuli (in rows and cols)
-	for r = 1:nrowcols(1)
-		for c = 1:nrowcols(2)
-			if s <= nStim
-				% assign spikes - need to account for NULL stimulus if present,
-				% since there will be only 1 level for the NULL stim...
-				if hasNULL && (s == nullIndex)
-					% only 1 level for null stimulus
-					Spikes{r, c} = spikesByStim{stimIndices{s}(1)};
-				else
-					% check on levels and stimIndices
-					if nLevels(s) ~= length(stimIndices{s})
-						error('%s: mismatch in nLevels and stimIndices', mfilename);
-					end
-					Spikes{r, c} = spikesByStim{stimIndices{s}(l)};
-				end
+		% get spikes - need to account for NULL stimulus if present,
+		% since there will be only 1 level for the NULL stim...
+		if hasNULL && (s == nullIndex)
+			% only 1 level for null stimulus
+			spiket = spikesByStim{stimIndices{s}(1)};
+		else
+			% check on levels and stimIndices
+			if nLevels(s) ~= length(stimIndices{s})
+				error('%s: mismatch in nLevels and stimIndices', mfilename);
 			end
-			% increment stimulus index
-			s = s + 1;
+			spiket = spikesByStim{stimIndices{s}(l)};
 		end
+
+		% now count spikes for each rep
+		nReps = length(spiket);
+		% allocate count storate
+		spikeCount = zeros(nReps, 1);
+		for r = 1:nReps
+			spikeCount(r) = sum(between(spiket{r}, stimOnsetOffset(s, 1), ...
+																stimOnsetOffset(s, 2) ) );
+		end
+		C{s, l} = spikeCount;
 	end
-	
-	% assign figure handle to hPR
-	hPR{l} = figure;
-	% plot!
-	rasterpsthmatrix(Spikes, plotopts);
-	% replace '.' in fbase with 'p' for similar reasons
-	set(hPR{l}, 'Name', sprintf('%s_%ddB', strrep(fbase, '.', 'p'), ...
-												Dinf.test.Level(l)));
-	set(hPR{l}, 'FileName', sprintf('%s_%ddB', strrep(fbase, '.', 'p'), ...
-												Dinf.test.Level(l)));
 end
 
-if nargout
-	varargout{1} = hPR;
-end
