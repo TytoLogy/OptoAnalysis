@@ -631,7 +631,9 @@ elseif plotRateLevelFun && any(strcmpi(Dinf.test.Type, {'LEVEL', 'BBN'}))
 			print(hRLF, pname, '-dpng', '-r300');
 		end
 	end	
+	Dinf.RLF = RLF;
 end
+
 
 %---------------------------------------------------------------------
 % Frequency tuning curve plot
@@ -669,8 +671,9 @@ elseif plotFreqTuningCrv && strcmpi(Dinf.test.Type, 'FREQ')
 			print(hFTC, pname, '-dpng', '-r300');
 		end
 	end	
+	% save FTC in Dinf... not ideal, but for now ok
+	Dinf.FTC = FTC;
 end
-
 
 %---------------------------------------------------------------------
 % FRA plot
@@ -703,7 +706,9 @@ elseif plotFreqRespArea
 			print(hFRA, pname, '-dpng', '-r300');
 		end
 	end
+	Dinf.FRA = FRA;
 end
+
 
 %---------------------------------------------------------------------
 % outputs

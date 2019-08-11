@@ -1,5 +1,6 @@
-% function varargout = computeSpikeCount(spikesByStim, Dinf, Winf, countWindow)
+function varargout = computeSpikeCount(spikesByStim, Dinf, Winf)
 %------------------------------------------------------------------------
+% [C, dBLevelsByStim] = computeSpikeCount(spikesByStim, Dinf, Winf, countWindow)
 %------------------------------------------------------------------------
 % TytoLogy:Experiments:OptoAnalysis
 %------------------------------------------------------------------------
@@ -9,7 +10,8 @@
 %	 spikesByStim		cell array of spiketimes, organized by stimulus type
 %							and level
 %	 Dinf					data information struct
-%
+%	 Winf					WAV stimulus info (from the test's wavinfo.mat file)
+%	
 %  Output Args:
 %------------------------------------------------------------------------
 % See Also: computeFRA, optoproc, optoproc_plotPSTH_WAVbyLevel
@@ -45,7 +47,8 @@ for s = 1:nStim
 	stimIndices{s} = find(iC == s);
 end
 
-% determine if there is a NULL stimulus
+% determine if there is a NULL stimulus - this will be important when
+% dealing with the different stimulus levels (only 1 level for NULL)
 if any(strcmpi('NULL', uniqueStim))
 	hasNULL = true;
 	nullIndex = find(strcmpi('NULL', uniqueStim));
@@ -56,7 +59,10 @@ end
 %------------------------------------------------------------------------
 % need to determine stimulus level information
 %------------------------------------------------------------------------
-[dbLevelsByStim, nLevels] = opto_find_stimlevels(uniqueStim, stimIndices, Dinf);
+% dBLevelsByStim will be a cell array of size {nStim, 1}
+% each element will be a vector of db SPL levels for each stimulus
+% nLevels will be the # of levels for each stimulus
+[dBLevelsByStim, nLevels] = opto_find_stimlevels(uniqueStim, stimIndices, Dinf);
 % need to check nlevels
 if hasNULL && length(unique(nLevels(nullIndex))) > 1
 	warning('odd mismatch in expected levels for NULL stimulus');
@@ -69,7 +75,7 @@ end
 % create array to hold raw spike counts is correct
 C = cell(nStim, max(nLevels));
 
-% build list of stimulus times
+% build list of stimulus onset/offset times
 stimOnsetOffset = zeros(nStim, 2);
 for s = 1:nStim
 	switch uniqueStim{s}
@@ -98,11 +104,9 @@ end
 
 %% process data
 
-
 % loop through levels
 for l = 1:max(nLevels)
 	for s = 1:nStim
-		fprintf('%d dB SPL\t\t', Dinf.test.Level(l));
 		fprintf('%s\n', uniqueStim{s});
 
 		% get spikes - need to account for NULL stimulus if present,
@@ -110,12 +114,14 @@ for l = 1:max(nLevels)
 		if hasNULL && (s == nullIndex)
 			% only 1 level for null stimulus
 			spiket = spikesByStim{stimIndices{s}(1)};
+			fprintf('%d (%d) dB SPL\t\t', dBLevelsByStim{s}(1), Dinf.test.Level(l));
 		else
 			% check on levels and stimIndices
 			if nLevels(s) ~= length(stimIndices{s})
 				error('%s: mismatch in nLevels and stimIndices', mfilename);
 			end
 			spiket = spikesByStim{stimIndices{s}(l)};
+			fprintf('%d (%d) dB SPL\t\t', dBLevelsByStim{s}(l), Dinf.test.Level(l));
 		end
 
 		% now count spikes for each rep
@@ -128,5 +134,11 @@ for l = 1:max(nLevels)
 		end
 		C{s, l} = spikeCount;
 	end
+end
+
+if nargout
+	varargout{1} = C;
+	varargout{2} = dBLevelsByStim;
+	varargout{3} = nLevels;
 end
 
