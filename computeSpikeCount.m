@@ -136,9 +136,44 @@ for l = 1:max(nLevels)
 	end
 end
 
+
 if nargout
 	varargout{1} = C;
 	varargout{2} = dBLevelsByStim;
 	varargout{3} = nLevels;
 end
+
+% count background from NULL stimulus
+if nargout == 4
+	if ~hasNULL
+		error('%s: no null stimulus!', mfilename)
+	end
+	
+	% create array to hold null spike counts 
+	N = cell(nStim, 2);
+	
+	% just use timing from first stimulus level
+	for s = 1:nStim
+		fprintf('BG for %s\n', uniqueStim{s});
+
+		% get spikes from NULL stimulus
+		spiket = spikesByStim{stimIndices{nullIndex}(1)};
+
+		% now count spikes for each rep - need nreps from actual stimulus
+		nReps = length(spikesByStim{stimIndices{s}(1)});
+		% allocate count storate
+		nullCount = zeros(nReps, 1);
+		nullRandIndx = randi(length(spiket), 1, nReps);
+		for r = 1:nReps
+			% get a random sweep from null spikes and compute count
+			nullCount(r) = sum(between(spiket{nullRandIndx(r)}, ...
+															stimOnsetOffset(s, 1), ...
+															stimOnsetOffset(s, 2) ) );
+		end
+		% store null count and index
+		N{s, 1} = nullCount;
+		N{s, 1} = nullRandIndx;
+	end
+	varargout{4} = N;
+end	
 
