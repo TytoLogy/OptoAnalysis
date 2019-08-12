@@ -107,21 +107,21 @@ end
 % loop through levels
 for l = 1:max(nLevels)
 	for s = 1:nStim
-		fprintf('%s\n', uniqueStim{s});
+		fprintf('%s\t\t', uniqueStim{s});
 
 		% get spikes - need to account for NULL stimulus if present,
 		% since there will be only 1 level for the NULL stim...
 		if hasNULL && (s == nullIndex)
 			% only 1 level for null stimulus
 			spiket = spikesByStim{stimIndices{s}(1)};
-			fprintf('%d (%d) dB SPL\t\t', dBLevelsByStim{s}(1), Dinf.test.Level(l));
+			fprintf('%d (%d) dB SPL\n', dBLevelsByStim{s}(1), Dinf.test.Level(l));
 		else
 			% check on levels and stimIndices
 			if nLevels(s) ~= length(stimIndices{s})
 				error('%s: mismatch in nLevels and stimIndices', mfilename);
 			end
 			spiket = spikesByStim{stimIndices{s}(l)};
-			fprintf('%d (%d) dB SPL\t\t', dBLevelsByStim{s}(l), Dinf.test.Level(l));
+			fprintf('%d (%d) dB SPL\n', dBLevelsByStim{s}(l), Dinf.test.Level(l));
 		end
 
 		% now count spikes for each rep
