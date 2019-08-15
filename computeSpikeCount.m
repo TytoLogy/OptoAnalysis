@@ -172,7 +172,7 @@ if nargout == 4
 		end
 		% store null count and index
 		N{s, 1} = nullCount;
-		N{s, 1} = nullRandIndx;
+		N{s, 2} = nullRandIndx;
 	end
 	varargout{4} = N;
 end	
