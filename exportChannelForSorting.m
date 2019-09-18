@@ -1,3 +1,4 @@
-function [outdata, outstamps] = datastream(indata)
+function [outdata, outstamps] = exportChannelForSorting(indata)
+% function to combine indvidual trials of neural data into a single stream
 
-% function to combine invidual trials of neural data into a single stream
+% 

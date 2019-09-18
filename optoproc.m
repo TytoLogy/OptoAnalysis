@@ -12,9 +12,9 @@ function varargout = optoproc(varargin)
 %   PLOTPATH				path (directory) for output of plot files
 %   HPFREQ					high pass filter cutoff frequency for neural data (Hz)
 %   LPFREQ					low pass filter cutoff frequency for neural data (Hz)
-%   THRESHOLD				RMS spike threshold (# RMS)
-%   CHANNEL					Input data channel (1-16)
-%   BINSIZE					binsize for PSTH (ms)
+%   THRESHOLD				RMS spike threshold (# RMS, default: 3)
+%   CHANNEL					Input data channel (1-16, default is 8)
+%   BINSIZE					binsize in ms for PSTH (default: 5 ms)
 %   PLOT_TRACES or		draw plots of all individual traces (1 = yes, 2 = no)
 %		PLOTTRACES
 %   PLOT_PSTH or			draw plots of PSTHs (1 = yes, 2 = no) as individual
@@ -36,6 +36,10 @@ function varargout = optoproc(varargin)
 %   PLOTROWCOLS			# of rows and columns for plots	
 %									([2 3] is 2 rows, 3 cols)
 %   EXPLORE					open optexplore app (not yet working 23 Jul 2019)
+%   EXPORT_CHANNEL		channel(s) to export	for spike sorting
+%									[8 10 11] will export data for channels 8, 10 11
+%								exported data will be in separate .mat files for
+%								each channel
 %	 SHOW_DEFAULTS			show default values for options
 % 
 % 	Outputs:
@@ -68,6 +72,7 @@ function varargout = optoproc(varargin)
 %	23-24 May 2019 (SJS): added things to plot WAV psths
 %	5 Jun 2019 (SJS): added comments in help, working on tone rate level
 %	23 Jun 2019 (SJS): fixed issue when # of wav stimuli are odd
+%	18 Sep 2019 (SJS: working on data export for spike sorting
 %--------------------------------------------------------------------------
 
 %---------------------------------------------------------------------
@@ -82,7 +87,7 @@ LPFreq = 4000;
 % RMS spike threshold
 % Threshold = 4.5;
 Threshold = 3;
-% Channel Number (use 8 for single channel data)
+% Channel Number (default: use 8 for single channel data)
 channelNumber = 8;
 % binSize for PSTH (milliseconds)
 binSize = 5;
@@ -102,6 +107,9 @@ plotFreqTuningCrv = 0;
 plotFreqRespArea = 0;
 % optexplore??
 exploreData = 0;
+% export data?
+exportData = 0;
+exportChannel = [];
 % SAVE PLOTS?
 saveFIG = 0;
 savePNG = 0;
@@ -224,6 +232,16 @@ if nargin
 			case {'EXPLORE', 'OPTEXPLORE'}
 				exploreData = 1;
 				argIndx = argIndx + 1;
+			case 'EXPORTCHANNEL'
+				tmp = varargin{argIndx + 1};
+				if ~isnumeric(tmp)
+					error('%s: exportChannels must be numeric', ...
+												mfilename);
+				else
+					exportData = 1;
+					exportChannel = tmp;
+				end
+				argIndx = argIndx + 2;
 			case 'SHOW_DEFAULTS'
 				fprintf('%s: Default values:\n', mfilename)
 				fprintf('\tDATAFILE: %s\n', datafile);
@@ -253,6 +271,7 @@ if nargin
 				else
 					fprintf('%d rows %d cols\n', prows, pcols);
 				end
+				fprintf('EXPORTCHANNEL: %d\n', exportChannel);
 				return
 			otherwise
 				error('%s: unknown input arg %s', mfilename, varargin{argIndx});
