@@ -23,11 +23,17 @@ end
 
 %% test method to convert 1 channel of data
 % this should be included in exportChannelForSorting...
+
+% input dir and file
 datadir = '/Users/sshanbhag/Work/Data/Mouse/IC/1344';
 datafile = '1344_20190916_04_02_1532_FREQ_TUNING.dat';
 
-% channel of data to obtain
-channel = 8;
+% output dir
+outputdir = pwd;
+
+% channel(s) of data to obtain
+% channel = 8;
+channel = [1 2 3];
 
 % can probably just use readOptoData
 % % the data will be further processed during sorting. for now, use a fairly
@@ -39,5 +45,55 @@ channel = 8;
 % 											'filter', filtband, ...
 % 											'channel', channel);
 										
-readOptoData(fullfile(datadir, datafile));
-%%
+[D, Dinf] = readOptoData(fullfile(datadir, datafile));
+% Fix test info
+Dinf = correctTestType(Dinf);
+fprintf('Test type: %s\n', Dinf.test.Type);
+
+%% quick plot of data for one trial
+
+% need colorspace to distinguish channels
+lineStyles = linspecer(16);
+figure(10)
+axes('NextPlot','replacechildren', 'ColorOrder', lineStyles);
+plot(D(1).datatrace);
+for c = 1:16
+	tl{c} = num2str(c);
+end
+legend(tl);
+
+
+
+%% Get data for channel(s) and write to file(s)
+
+% get basename for output file
+[~, outputfile_base] = fileparts(datafile);
+
+% number of traces/stimulus presentations
+nstims = length(D);
+% use length of first response to determine length of traces
+nsamples = length(D{1}.datatrace);
+% number of channels to loop
+nchan = length(channel);
+% sample rate
+sr = Dinf.indev.Fs;
+
+% loop through channels
+for cIndx = 1:nchan
+
+	% allocate temporary data storage for current channel
+	tmpC = zeros(nsamples, nstims);
+	for s = 1:nstims
+		tmpC(:, s) = D{s}.datatrace(:, channel(cIndx));
+	end
+
+	% convert to single-row 
+	data = reshape(tmpC, 1, []);
+
+	% write to file
+	outputfile = sprintf('%s_C%d.mat', outputfile_base, channel(cIndx));
+	fprintf('Writing %d points to %s\n', length(data), outputfile)
+	save(fullfile(outputdir, outputfile), '-MAT', 'data', 'sr');
+end
+
+
