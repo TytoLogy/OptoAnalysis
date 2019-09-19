@@ -243,6 +243,7 @@ if nargin
 				end
 				argIndx = argIndx + 2;
 			case 'SHOW_DEFAULTS'
+				% display default values for settings & options
 				fprintf('%s: Default values:\n', mfilename)
 				fprintf('\tDATAFILE: %s\n', datafile);
 				fprintf('\tPLOTPATH: %s\n', plotpath_base);
@@ -256,7 +257,7 @@ if nargin
 				fprintf('\tPLOT_PSTH_BY_LEVEL: %d\n', plotPSTH_BY_LEVEL);
 				fprintf('\tPLOT_PSTH_MATRIX: %d\n', plotPSTHMAT);
 				fprintf('\tPLOT_RLF: %d\n', plotRateLevelFun);
-				fprintf('\tPLOT_FTC: %d\n', plotFreqTunCrv);
+				fprintf('\tPLOT_FTC: %d\n', plotFreqTuningCrv);
 				fprintf('\tPLOT_FRA: %d\n', plotPSTH);
 				fprintf('\tSAVEFIG: %d\n', saveFIG);
 				fprintf('\tSAVEPNG: %d\n', savePNG);
@@ -271,7 +272,7 @@ if nargin
 				else
 					fprintf('%d rows %d cols\n', prows, pcols);
 				end
-				fprintf('EXPORTCHANNEL: %d\n', exportChannel);
+				fprintf('\tEXPORTCHANNEL: %d\n', exportChannel);
 				return
 			otherwise
 				error('%s: unknown input arg %s', mfilename, varargin{argIndx});
