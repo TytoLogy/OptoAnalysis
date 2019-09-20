@@ -204,4 +204,7 @@ hold on
 hold off
 grid on
 
+%% test exportChannelForSorting
+
+[outdata, outstamps] = exportChannelForSorting(D, Dinf, channel);
 
