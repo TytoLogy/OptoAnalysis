@@ -1,7 +1,7 @@
 function [outdata, outstamps] = exportChannelForSorting(D, Dinf, channel)
 % function to combine indvidual trials of neural data into a single stream
 
-% % number of traces/stimulus presentations
+% number of traces/stimulus presentations
 nstims = length(D);
 % number of channels to loop through
 nchan = length(channel);

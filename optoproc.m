@@ -89,6 +89,8 @@ LPFreq = 4000;
 Threshold = 3;
 % Channel Number (default: use 8 for single channel data)
 channelNumber = 8;
+% limits for channels (low high)
+CHANNEL_LIMITS = [1 16];
 % binSize for PSTH (milliseconds)
 binSize = 5;
 % Plot Traces?
@@ -237,6 +239,9 @@ if nargin
 				if ~isnumeric(tmp)
 					error('%s: exportChannels must be numeric', ...
 												mfilename);
+				elseif ~all(between(tmp, CHANNEL_LIMITS(1), CHANNEL_LIMITS(2)))
+					error('%s: exportChannels must be between %d and %d', ...
+									mfilename, CHANNEL_LIMITS(1), CHANNEL_LIMITS(2));
 				else
 					exportData = 1;
 					exportChannel = tmp;
