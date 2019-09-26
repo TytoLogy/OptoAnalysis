@@ -1,5 +1,30 @@
-function [outdata, outstamps] = exportChannelForSorting(D, Dinf, channel)
+function [outdata, outstamps] = exportChannelAsVector(D, Dinf, channel)
+%------------------------------------------------------------------------
+% [outdata, outstamps] = exportChannelAsVector(D, Dinf, channel)
+%------------------------------------------------------------------------
+% TytoLogy:Experiments:OptoAnalysis
+%--------------------------------------------------------------------------
 % function to combine indvidual trials of neural data into a single stream
+%--------------------------------------------------------------------------
+% 	outdata will be a cell array of size {# channels, 1} with each row 
+% 		containing a vector of all sweeps for that channel
+% 	outstamps will be cell array of size {# channels, 2}
+% 			column 1: traceIndices(# sweeps, 2) holding start index (sample #)
+% 							and end index for each sweep within the long combined
+% 							channel data vector. This information will be used
+% 							for 
+% 			column 2: # of samples for each sweep (more for diagnostic use)
+%--------------------------------------------------------------------------
+
+%------------------------------------------------------------------------
+%  Sharad Shanbhag
+%   sshanbhag@neomed.edu
+%------------------------------------------------------------------------
+% Created: September, 2019 (SJS)
+%
+% Revisions:
+%	26 Sep 2019 (SJS): renamed, added comments
+%--------------------------------------------------------------------------
 
 % number of traces/stimulus presentations
 nstims = length(D);
