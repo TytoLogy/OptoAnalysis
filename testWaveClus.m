@@ -208,3 +208,9 @@ grid on
 
 [outdata, outstamps] = exportChannelForSorting(D, Dinf, channel);
 
+%% test optoproc
+
+optoproc('file', fullfile(datadir, datafile), ...
+				'export_channel', 8, 'export_path', pwd);
+
+%%

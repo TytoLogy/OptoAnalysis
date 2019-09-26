@@ -408,10 +408,10 @@ if exportData
 				% get data and stamps for this channel
 				data = exData{c};
 				traceIndices = exStamps{c, 1}; %#ok<NASGU>
-				nSamples = exStamps{c, 2}; %#ok<NASGU>
+				nsamples = exStamps{c, 2}; %#ok<NASGU>
 				channel = exportChannel(c);
 				% get sample rate
-				sr = Dinf.Dinf.indev.Fs; %#ok<NASGU>
+				sr = Dinf.indev.Fs; %#ok<NASGU>
 				% write to file
 				exportfile = sprintf('%s_C%d.mat', exportfile_base, channel);
 				fprintf('Writing %d points to %s\n', length(data), exportfile);
