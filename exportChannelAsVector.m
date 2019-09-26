@@ -36,7 +36,6 @@ outstamps = cell(nchan, 2);
 
 % loop through channels
 for cIndx = 1:nchan
-
 	% allocate temporary data storage for current channel
 	tmpD = cell(nstims, 1);
 	% allocate array to hold sweep start and end

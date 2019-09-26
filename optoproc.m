@@ -368,6 +368,9 @@ other = fname(startusc(end):end); %#ok<NASGU>
 if isempty(plotFileName)
 	plotFileName = fname;
 end
+if exportData
+	exportfile_base = fname;
+end
 
 %---------------------------------------------------------------------
 % export data for spike sorting
@@ -386,7 +389,7 @@ if exportData
 	if ~exist(exportpath, 'dir')
 		mkdir(exportpath);
 	end
-	
+
 	% create export data
 	% exData will be a cell array of size {# channels, 1} with each row 
 	%	containing a vector of all sweeps for that channel
@@ -398,7 +401,25 @@ if exportData
 	%		column 2: # of samples for each sweep (more for diagnostic use)
 	switch(upper(exportMode))
 		case 'WAVE_CLUS'
-			[exData, exStamps] = exportChannelAsVector(
+			[exData, exStamps] = exportChannelAsVector(D, Dinf, exportChannel);
+			
+			% loop through channels
+			for c = 1:length(exportChannel)
+				% get data and stamps for this channel
+				data = exData{c};
+				traceIndices = exStamps{c, 1}; %#ok<NASGU>
+				nSamples = exStamps{c, 2}; %#ok<NASGU>
+				channel = exportChannel(c);
+				% get sample rate
+				sr = Dinf.Dinf.indev.Fs; %#ok<NASGU>
+				% write to file
+				exportfile = sprintf('%s_C%d.mat', exportfile_base, channel);
+				fprintf('Writing %d points to %s\n', length(data), exportfile);
+				save(fullfile(exportpath, exportfile), '-MAT', ...
+								'data', 'sr', 'traceIndices', 'nsamples', 'channel');
+			end
+			
+			
 		otherwise
 			error('%s: unsupported export mode %s', mfilename, exportMode);
 	end
