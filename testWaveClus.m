@@ -211,6 +211,6 @@ grid on
 %% test optoproc
 
 optoproc('file', fullfile(datadir, datafile), ...
-				'export_channel', 8, 'export_path', pwd);
+				'export_channel', channel, 'export_path', pwd);
 
 %%
