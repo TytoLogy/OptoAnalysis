@@ -398,7 +398,7 @@ if exportData
 	%		column 2: # of samples for each sweep (more for diagnostic use)
 	switch(upper(exportMode))
 		case 'WAVE_CLUS'
-			[exData, exStamps] = exportChannelForSor
+			[exData, exStamps] = exportChannelAsVector(
 		otherwise
 			error('%s: unsupported export mode %s', mfilename, exportMode);
 	end
