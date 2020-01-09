@@ -42,6 +42,7 @@ function varargout = optoproc(varargin)
 %								each channel
 %	 EXPORT_PATH			path (directory) for export of files for spike sorting
 %	 EXPORT_MODE			default: 'wave_clus'
+%								options:
 %	 SHOW_DEFAULTS			show default values for options
 % 
 % 	Outputs:
