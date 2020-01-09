@@ -12,9 +12,9 @@ function varargout = optoproc(varargin)
 %   PLOTPATH				path (directory) for output of plot files
 %   HPFREQ					high pass filter cutoff frequency for neural data (Hz)
 %   LPFREQ					low pass filter cutoff frequency for neural data (Hz)
-%   THRESHOLD				RMS spike threshold (# RMS)
-%   CHANNEL					Input data channel (1-16)
-%   BINSIZE					binsize for PSTH (ms)
+%   THRESHOLD				RMS spike threshold (# RMS, default: 3)
+%   CHANNEL					Input data channel (1-16, default is 8)
+%   BINSIZE					binsize in ms for PSTH (default: 5 ms)
 %   PLOT_TRACES or		draw plots of all individual traces (1 = yes, 2 = no)
 %		PLOTTRACES
 %   PLOT_PSTH or			draw plots of PSTHs (1 = yes, 2 = no) as individual
@@ -36,6 +36,12 @@ function varargout = optoproc(varargin)
 %   PLOTROWCOLS			# of rows and columns for plots	
 %									([2 3] is 2 rows, 3 cols)
 %   EXPLORE					open optexplore app (not yet working 23 Jul 2019)
+%   EXPORT_CHANNEL		channel(s) to export	for spike sorting
+%									[8 10 11] will export data for channels 8, 10 11
+%								exported data will be in separate .mat files for
+%								each channel
+%	 EXPORT_PATH			path (directory) for export of files for spike sorting
+%	 EXPORT_MODE			default: 'wave_clus'
 %	 SHOW_DEFAULTS			show default values for options
 % 
 % 	Outputs:
@@ -68,6 +74,8 @@ function varargout = optoproc(varargin)
 %	23-24 May 2019 (SJS): added things to plot WAV psths
 %	5 Jun 2019 (SJS): added comments in help, working on tone rate level
 %	23 Jun 2019 (SJS): fixed issue when # of wav stimuli are odd
+%	18 Sep 2019 (SJS: working on data export for spike sorting
+%	26 Sep 2019 (SJS): continuing export implementation - added output path
 %--------------------------------------------------------------------------
 
 %---------------------------------------------------------------------
@@ -76,14 +84,17 @@ function varargout = optoproc(varargin)
 datafile = '';
 plotpath_base = ''; 
 userPLOTPATH = 0;
+
 % filter
 HPFreq = 300;
 LPFreq = 4000;
 % RMS spike threshold
 % Threshold = 4.5;
 Threshold = 3;
-% Channel Number (use 8 for single channel data)
+% Channel Number (default: use 8 for single channel data)
 channelNumber = 8;
+% limits for channels (low high)
+CHANNEL_LIMITS = [1 16];
 % binSize for PSTH (milliseconds)
 binSize = 5;
 % Plot Traces?
@@ -102,6 +113,12 @@ plotFreqTuningCrv = 0;
 plotFreqRespArea = 0;
 % optexplore??
 exploreData = 0;
+% export data?
+exportData = 0;
+exportChannel = [];
+exportpath_base = '';
+userEXPORTPATH = 0;
+exportMode = 'WAVE_CLUS';
 % SAVE PLOTS?
 saveFIG = 0;
 savePNG = 0;
@@ -224,7 +241,33 @@ if nargin
 			case {'EXPLORE', 'OPTEXPLORE'}
 				exploreData = 1;
 				argIndx = argIndx + 1;
+			case 'EXPORT_CHANNEL'
+				tmp = varargin{argIndx + 1};
+				if ~isnumeric(tmp)
+					error('%s: exportChannels must be numeric', ...
+												mfilename);
+				elseif ~all(between(tmp, CHANNEL_LIMITS(1), CHANNEL_LIMITS(2)))
+					error('%s: exportChannels must be between %d and %d', ...
+									mfilename, CHANNEL_LIMITS(1), CHANNEL_LIMITS(2));
+				else
+					exportData = 1;
+					exportChannel = tmp;
+				end
+				argIndx = argIndx + 2;
+			case 'EXPORT_PATH'
+				exportpath_base = varargin{argIndx + 1};
+				userEXPORTPATH = 1;
+				argIndx = argIndx + 2;
+			case 'EXPORT_MODE'
+				tmp = varargin{argIndx + 1};
+				if ~any(strcmpi(tmp, {'WAVE_CLUS'}))
+					error('%s: unsupported export mode %s', mfilename, tmp);
+				else
+					exportMode = tmp;
+				end
+				argIndx = argIndx + 2;
 			case 'SHOW_DEFAULTS'
+				% display default values for settings & options
 				fprintf('%s: Default values:\n', mfilename)
 				fprintf('\tDATAFILE: %s\n', datafile);
 				fprintf('\tPLOTPATH: %s\n', plotpath_base);
@@ -238,7 +281,7 @@ if nargin
 				fprintf('\tPLOT_PSTH_BY_LEVEL: %d\n', plotPSTH_BY_LEVEL);
 				fprintf('\tPLOT_PSTH_MATRIX: %d\n', plotPSTHMAT);
 				fprintf('\tPLOT_RLF: %d\n', plotRateLevelFun);
-				fprintf('\tPLOT_FTC: %d\n', plotFreqTunCrv);
+				fprintf('\tPLOT_FTC: %d\n', plotFreqTuningCrv);
 				fprintf('\tPLOT_FRA: %d\n', plotPSTH);
 				fprintf('\tSAVEFIG: %d\n', saveFIG);
 				fprintf('\tSAVEPNG: %d\n', savePNG);
@@ -253,6 +296,10 @@ if nargin
 				else
 					fprintf('%d rows %d cols\n', prows, pcols);
 				end
+				fprintf('\tEXPORTDATA: %d\n', exportData);
+				fprintf('\tEXPORT_CHANNEL: %d\n', exportChannel);
+				fprintf('\tEXPORT_PATH: %s\n', exportpath_base);
+				fprintf('\tEXPORT_MODE: %s\n', exportMode);
 				return
 			otherwise
 				error('%s: unknown input arg %s', mfilename, varargin{argIndx});
@@ -321,6 +368,62 @@ other = fname(startusc(end):end); %#ok<NASGU>
 if isempty(plotFileName)
 	plotFileName = fname;
 end
+if exportData
+	exportfile_base = fname;
+end
+
+%---------------------------------------------------------------------
+% export data for spike sorting
+%---------------------------------------------------------------------
+if exportData
+	% where to put output data?
+	if userEXPORTPATH
+		% user provided path
+		exportpath = exportpath_base;
+	else
+		% build path from default base and animal # + date
+		exportpath = fullfile(exportpath_base, animal, datecode); 
+	end
+	fprintf('Exported files will be written to:\n\t%s\n', exportpath);
+	% make directory if needed
+	if ~exist(exportpath, 'dir')
+		mkdir(exportpath);
+	end
+
+	% create export data
+	% exData will be a cell array of size {# channels, 1} with each row 
+	%	containing a vector of all sweeps for that channel
+	% exStamps will be cell array of size {# channels, 2}
+	%		column 1: traceIndices(# sweeps, 2) holding start index (sample #)
+	%						and end index for each sweep within the long combined
+	%						channel data vector. This information will be used
+	%						for 
+	%		column 2: # of samples for each sweep (more for diagnostic use)
+	switch(upper(exportMode))
+		case 'WAVE_CLUS'
+			[exData, exStamps] = exportChannelAsVector(D, Dinf, exportChannel);
+			
+			% loop through channels
+			for c = 1:length(exportChannel)
+				% get data and stamps for this channel
+				data = exData{c};
+				traceIndices = exStamps{c, 1}; %#ok<NASGU>
+				nsamples = exStamps{c, 2}; %#ok<NASGU>
+				channel = exportChannel(c);
+				% get sample rate
+				sr = Dinf.indev.Fs; %#ok<NASGU>
+				% write to file
+				exportfile = sprintf('%s_C%d.mat', exportfile_base, channel);
+				fprintf('Writing %d points to %s\n', length(data), exportfile);
+				save(fullfile(exportpath, exportfile), '-MAT', ...
+								'data', 'sr', 'traceIndices', 'nsamples', 'channel');
+			end
+			
+			
+		otherwise
+			error('%s: unsupported export mode %s', mfilename, exportMode);
+	end
+end
 
 %---------------------------------------------------------------------
 % create plot output dir if plots will be saved to files
@@ -330,10 +433,11 @@ if any([saveFIG savePDF savePNG]) && any([plotTraces plotPSTH])
 		plotpath = plotpath_base;
 	else
 		plotpath = fullfile(plotpath_base, animal, datecode); 
-		fprintf('Files will be written to:\n\t%s\n', plotpath);
-		if ~exist(plotpath, 'dir')
-			mkdir(plotpath);
-		end
+	end
+	fprintf('Files will be written to:\n\t%s\n', plotpath);
+	% make directory if needed
+	if ~exist(plotpath, 'dir')
+		mkdir(plotpath);
 	end
 end
 
