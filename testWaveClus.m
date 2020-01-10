@@ -60,6 +60,7 @@ lineStyles = linspecer(16);
 figure(10)
 axes('NextPlot','replacechildren', 'ColorOrder', lineStyles);
 plot(D{1}.datatrace);
+tl = cell(1, 16);
 for c = 1:16
 	tl{c} = num2str(c);
 end
