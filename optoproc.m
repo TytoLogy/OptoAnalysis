@@ -77,6 +77,8 @@ function varargout = optoproc(varargin)
 %	23 Jun 2019 (SJS): fixed issue when # of wav stimuli are odd
 %	18 Sep 2019 (SJS: working on data export for spike sorting
 %	26 Sep 2019 (SJS): continuing export implementation - added output path
+%	4 Mar 2020 (SJS): modified channel arg processing to perform check on
+%	valid channels (same code as for export_channels)
 %--------------------------------------------------------------------------
 
 %---------------------------------------------------------------------
@@ -176,7 +178,16 @@ if nargin
 				end
 				argIndx = argIndx + 2;
 			case 'CHANNEL'
-				channelNumber = varargin{argIndx + 1};
+				tmp = varargin{argIndx + 1};
+				if ~isnumeric(tmp)
+					error('%s: Channels must be numeric', ...
+												mfilename);
+				elseif ~all(between(tmp, CHANNEL_LIMITS(1), CHANNEL_LIMITS(2)))
+					error('%s: Channels must be between %d and %d', ...
+									mfilename, CHANNEL_LIMITS(1), CHANNEL_LIMITS(2));
+				else
+					channelNumber = tmp;
+				end
 				argIndx = argIndx + 2;
 			case 'BINSIZE'
 				binSize = varargin{argIndx + 1};
