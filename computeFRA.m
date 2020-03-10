@@ -56,5 +56,5 @@ FRA.Freqs = freqs;
 FRA.Levels = levels;
 FRA.nfreqs = nfreqs;
 FRA.nlevels = nlevels;
-
+FRA.fname = '';
 
