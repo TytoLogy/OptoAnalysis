@@ -440,7 +440,7 @@ end
 %---------------------------------------------------------------------
 % create plot output dir if plots will be saved to files
 %---------------------------------------------------------------------
-if any([saveFIG savePDF savePNG]) && any([plotTraces plotPSTH])				
+if any([saveFIG savePDF savePNG])				
 	if userPLOTPATH
 		plotpath = plotpath_base;
 	else
@@ -705,13 +705,13 @@ if plotPSTH
 				pname = fullfile(plotpath, get(hPR{f}, 'FileName'));
 			end
 			if saveFIG
-				savefig(hPR, pname, 'compact');
+				savefig(hPR{f}, pname, 'compact');
 			end
 			if savePDF
-				print(hPR, pname, '-dpdf');
+				print(hPR{f}, pname, '-dpdf');
 			end
 			if savePNG
-				print(hPR, pname, '-dpng', '-r300');
+				print(hPR{f}, pname, '-dpng', '-r300');
 			end
 			end
 	end
