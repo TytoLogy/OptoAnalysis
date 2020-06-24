@@ -419,11 +419,11 @@ if exportData
 			for c = 1:length(exportChannel)
 				% get data and stamps for this channel
 				data = exData{c};
-				traceIndices = exStamps{c, 1}; %#ok<NASGU>
-				nsamples = exStamps{c, 2}; %#ok<NASGU>
+				traceIndices = exStamps{c, 1}; 
+				nsamples = exStamps{c, 2}; 
 				channel = exportChannel(c);
 				% get sample rate
-				sr = Dinf.indev.Fs; %#ok<NASGU>
+				sr = Dinf.indev.Fs; 
 				% write to file
 				exportfile = sprintf('%s_C%d.mat', exportfile_base, channel);
 				fprintf('Writing %d points to %s\n', length(data), exportfile);
