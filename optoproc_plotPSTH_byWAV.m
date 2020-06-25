@@ -172,6 +172,7 @@ for s = 1:nStim
 	for l = 1:nLevels(s)
 		Spikes{l} = spikesByStim{stimIndices{s}(l)};
 	end
+
 	rasterpsthmatrix(Spikes, plotopts);
 	% replace '.' in fbase with 'p' for similar reasons
 	set(hPR{s}, 'Name', sprintf('%s_%s', strrep(fbase, '.', 'p'), ...
