@@ -148,8 +148,8 @@ plotopts.plotgap = 0.001;
 plotopts.vertgap = 0.035;
 plotopts.xlabel = 'msec';
 plotopts.stimulus_times_plot = 3;
-plotopts.stimulus_on_color{1} = [0 0 1];
-plotopts.stimulus_off_color{1} = [0 0 1];
+plotopts.stimulus_on_color{1} = [0.4 0.4 0.4];
+plotopts.stimulus_off_color{1} = [0.4 0.4 0.4];
 plotopts.stimulus_onoff_pct(1) = 60;
 % add on off bars for opto stim
 if Dinf.opto.Enable
