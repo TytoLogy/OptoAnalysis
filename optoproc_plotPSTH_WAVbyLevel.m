@@ -1,8 +1,10 @@
-function varargout = optoproc_plotPSTH_WAVbyLevel(spikesByStim, Dinf, binSize, ...
-												nrowcols, timeLimits, yLimits)
+function varargout = optoproc_plotPSTH_WAVbyLevel(spikesByStim, ...
+										Dinf, binSize, ...
+										nrowcols, timeLimits, yLimits, varargin)
 %------------------------------------------------------------------------
-%  H = optoproc_plotPSTH_WAVbyLevel(spikesByStim, Dinf, binSize, ...
-% 												nrowcols, timeLimits, yLimits)
+%  H = optoproc_plotPSTH_WAVbyLevel(spikesByStim, Dinf, binSize, 
+% 												nrowcols, timeLimits, yLimits, 
+%												stimulus_times)
 %------------------------------------------------------------------------
 % TytoLogy:Experiments:OptoAnalysis
 %------------------------------------------------------------------------
@@ -16,7 +18,10 @@ function varargout = optoproc_plotPSTH_WAVbyLevel(spikesByStim, Dinf, binSize, .
 %	 nrowcols			[nrows ncols] for plotting
 %	 timeLimits			xaxis limits for plots [min max]
 %	 yLimits				yaxis limits for plots [min max]
-%
+%	Optional Inputs:
+%	 stimulusTimes		{nstimuli, 1} cell array with 
+%							[stim onset, stim offset] times in milliseconds
+%	 offset]
 %  Output Args:
 %	 H		handle to figure
 %------------------------------------------------------------------------
@@ -30,10 +35,18 @@ function varargout = optoproc_plotPSTH_WAVbyLevel(spikesByStim, Dinf, binSize, .
 % Created: 24 May 2019 (SJS), adapting from plotPSTHMATRIX & plotPSTH_WAV
 %
 % Revisions:
-% % title string not necessary?
+%  title string not necessary?
+% 7 Jul 2020 (SJS): adding input stimulus times option
 %------------------------------------------------------------------------
 
-nrowcols = [];
+%------------------------------------------------------------------------
+%% definitions, input args
+%------------------------------------------------------------------------
+if ~isempty(varargin)
+	stimulusTimes = varargin{1};
+else
+	stimulusTimes = [];
+end
 
 %------------------------------------------------------------------------
 %% first, get information about stimuli
@@ -163,13 +176,12 @@ for v = 1:nvars
 	end
 end
 
-% build list of stimulus times
 % create list of stimulus times
-plotopts.stimulus_times = cell(nrowcols(1), nrowcols(2));
-s = 1;
-for r = 1:nrowcols(1)
-	for c = 1:nrowcols(2)
-		if s <= nStim
+if isempty(stimulusTimes)
+	% build list of stimulus times if one is not provided
+	plotopts.stimulus_times = cell(nrowcols(1), nrowcols(2));
+	for r = 1:nrowcols(1)
+		for c = 1:nrowcols(2)
 			% need to have [stim_onset stim_offset], so add delay to 
 			% [0 duration] to compute proper times. then, multiply by 0.001 to
 			% give times in seconds (Dinf values are in milliseconds)
@@ -182,9 +194,31 @@ for r = 1:nrowcols(1)
 																[0 Dinf.opto.Dur]) ];
 			end
 		end
-		s = s + 1;
 	end
+else
+	% assign stimulus times from provided list
+	plotopts.stimulus_times = cell(nrowcols(1), nrowcols(2));
+	s = 1;
+	for r = 1:nrowcols(1)
+		for c = 1:nrowcols(2)
+			if s <= nStim
+				% need to have [stim_onset stim_offset], so add delay to 
+				% [0 duration] to compute proper times. then, multiply by 0.001 to
+				% give times in seconds (Dinf values are in milliseconds)
+				plotopts.stimulus_times{r, c} = 0.001 * stimulusTimes{s};
+				% if opto is Enabled, add it to the array by concatenation
+				if Dinf.opto.Enable
+					plotopts.stimulus_times{r, c} = ...
+										[plotopts.stimulus_times{r, c}; ...
+											0.001 * (Dinf.opto.Delay + ...
+													[0 Dinf.opto.Dur]) ];
+				end
+			end
+			s = s + 1;
+		end
+	end	
 end
+
 
 % create plot titles
 plotopts.plot_titles = cell(nrowcols(1), nrowcols(2));
