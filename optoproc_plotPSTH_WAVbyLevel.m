@@ -106,7 +106,9 @@ if hasNULL && length(unique(nLevels(nullIndex))) > 1
 end
 
 %------------------------------------------------------------------------
+%------------------------------------------------------------------------
 %% setup plots / options
+%------------------------------------------------------------------------
 %------------------------------------------------------------------------
 
 % create array to hold figure handles - assume max(nLevels) is correct
@@ -115,24 +117,11 @@ hPR = cell(max(nLevels), 1);
 % determine rows, columns if necessary
 if isempty(nrowcols)
 	nrowcols = optoproc_figure_plotrowcol(nStim);
-% 	if numel(nStim) == 1
-% 		% for data that are not "2D" (e.g., FRA), adjust # of columns based
-% 		% on the number of variable levels or types (nvars)
-% 		
-% 		% need to determine how many columns
-% 		if nStim <= 6
-% 			nrowcols = [nStim 1];
-% 		elseif iseven(nStim)
-% 			nrowcols = [nStim/2  2];
-% 		else
-% 			nrowcols = [ceil(nStim/2) 2];
-% 		end
-% 	else
-% 		error('%s: not written to handle 2 dim nStim', mfilename);
-% 	end
 end
 
+%------------------------------------------------------------------------
 % global options for raster and psth matrix
+%------------------------------------------------------------------------
 plotopts.timelimits = timeLimits;
 % assign y axis limits if provided
 if ~isempty(yLimits)
@@ -148,9 +137,9 @@ plotopts.plotgap = 0.001;
 plotopts.vertgap = 0.035;
 plotopts.xlabel = 'msec';
 plotopts.stimulus_times_plot = 3;
-plotopts.stimulus_on_color{1} = [0.4 0.4 0.4];
-plotopts.stimulus_off_color{1} = [0.4 0.4 0.4];
-plotopts.stimulus_onoff_pct(1) = 60;
+plotopts.stimulus_on_color{1} = [1 0.4 0.4];
+plotopts.stimulus_off_color{1} = [1 0.4 0.4];
+plotopts.stimulus_onoff_pct(1) = 0;
 % add on off bars for opto stim
 if Dinf.opto.Enable
 	% add colors for second stimulus
