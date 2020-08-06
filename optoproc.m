@@ -687,8 +687,14 @@ if plotPSTH
 	
 	if strcmpi(Dinf.test.Type, 'WAVFILE')
 		if plotPSTH_BY_LEVEL
+			% need to deal with change in row, col in plotPSTH_WAVbyLevel
+			if autoRowCols
+				rowcols = [];
+			else
+				rowcols = [prows pcols];
+			end
 			hPR = optoproc_plotPSTH_WAVbyLevel(spiketimes, Dinf, binSize, ...
-									[prows pcols], timeLimits, yLimits);			
+									rowcols, timeLimits, yLimits);			
 		else
 			hPR = optoproc_plotPSTH_byWAV(spiketimes, Dinf, binSize, ...
 									timeLimits, yLimits);
