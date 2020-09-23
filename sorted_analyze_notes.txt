@@ -1,0 +1,23 @@
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+sorted_analyze_notes.txt
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+
+
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+23 Sept 2020
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+- created sorted_analyze.m and sorted_analyze_notes.txt
+- currently working with sorted BBN file from Mahtab:
+	1407_20200305_01_01_550_BBN-Sorted.plx
+
+Has 16 channels of data from 4 shank electrode, recording location is IC
+
+Might be useful to have ADChannel-> electrode site map 
+	object? map function? encapsulate .prb info (probe map used for 
+	spyKING CIRCUS)?
+
+
