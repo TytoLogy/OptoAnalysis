@@ -75,3 +75,68 @@ S = import_from_plexon(fullfile(plxFilePath, plxFile), ...
 % and units
 [fileList, channelList, unitList] = S.printInfo;
 
+%% Plot RLFs, raster/psth
+% binsize (in milliseconds) for psth
+psth_bin_size = 5;
+%------------------------------------------------------------------------
+% loop through channels, units
+%------------------------------------------------------------------------
+nChannels = length(channelList);
+for cIndx = 1:nChannels
+	% set current channel
+	channel = channelList(cIndx);
+	% and get list of units for this channel
+	if ~isempty(unitList{cIndx})
+		units = unitList{cIndx};
+		nUnits = length(units);
+	else
+		units = [];
+		nUnits = 0;
+	end
+	
+	if nUnits
+		
+		Hwf = cell(nUnits, 1);
+		for uIndx = 1:nUnits
+			% specify unit:
+			unit = units(uIndx);
+
+			%-------------------------------------------------------
+			% figure out file index for this test. the indexForTestName method of
+			% SpikeData class allows an easy way to do this.
+			%-------------------------------------------------------
+			findx = S.indexForTestName('BBN');
+			if isempty(findx)
+				fprintf('Test %s not found in %s\n', testToPlot, plxFile);
+				error('%s: bad testToPlot', mfilename);
+			end
+
+			%------------------------------------------------------------------------
+			% get spikes times struct (store in st) for this test, channel and unit
+			% spiketimes will be aligned to start of each sweep
+			%------------------------------------------------------------------------
+			fprintf('Getting data for file %d (%s), channel, %d unit %d\n', ...
+											findx, S.listFiles{findx}, channel, unit);
+			st = S.getSpikesByStim(findx, channel, unit);
+
+			% plot waveforms
+			plot_waveforms_from_table(st, S.Info.Fs);
+			Hwf{uIndx} = gca;
+		end
+		
+		% create new figure with subplots
+		figure
+		Hsub = cell(nUnits, 1);
+		for uIndx = 1:nUnits
+			Hsub{uIndx} = subplot(nUnits, 1, uIndx);
+			copyobj(Hwf{uIndx}, Hsub{uIndx});
+		end
+		
+	else
+		fprintf('No units on channel %d\n', channel);
+	end
+
+end
+
+
+
