@@ -1,18 +1,21 @@
 %------------------------------------------------------------------------
-% sorted_analyze.m
+% ImportSortedPLXData.m
 %------------------------------------------------------------------------
-% TytoLogy:OptoAnalysis
-%--------------------------------------------------------------------------
-% working script for analysis of sorted (Plexon) data
+% TytoLogy:OptoAnalysis:SampleCode
+%------------------------------------------------------------------------
+% example script to show how to load sorted (Plexon) data as object
+%
+% Requires code from optosort, opto and OptoAnalysis (as well as 
+% typical TytoLogy tools)
 %------------------------------------------------------------------------
 % See Also: optosort, optoproc, opto (TytoLogy:opto program)
 %------------------------------------------------------------------------
 
 %------------------------------------------------------------------------
-%  Sharad Shanbhag
-%   sshanbhag@neomed.edu
+% Sharad Shanbhag
+% sshanbhag@neomed.edu
 %------------------------------------------------------------------------
-% Created: 23 September 2020 (SJS)
+% Created: 30 September 2020 (SJS)
 %	 
 % Revisions:
 %
@@ -38,6 +41,7 @@ nexInfoPath = plxFilePath;
 plxFile = '1407_20200305_01_01_550_BBN-Sorted.plx';
 % nexinfo file
 nexInfoFile = '1407_20200305_01_01_550_BBN_nexinfo.mat';
+
 
 sendmsg(sprintf('Using data from file: %s', plxFile));
 
@@ -66,76 +70,59 @@ sendmsg(sprintf('Using data from file: %s', plxFile));
 %------------------------------------------------------------------------
 S = import_from_plexon(fullfile(plxFilePath, plxFile), ...
 							fullfile(nexInfoPath, nexInfoFile), 'continuous');
-						
+
+
 %------------------------------------------------------------------------
 %% show file, channel, unit
 %------------------------------------------------------------------------
-% display file, channel, unit info, store information about files, channels
-% and units
+% SpikeData.printInfo method will print/display file, channel, unit info
+% and returns information about the data in:
+%  fileList = {nfiles, 1} cell array of original .dat files 
+%  channelList = [# A/D Channels, 1] vector of channel ID numbers (A/D)
+%  unitList = {# A/D Channels, 1} cell array, where each element is a
+%             vector of unit ID #s from Plexon
 [fileList, channelList, unitList] = S.printInfo;
 
-%% Plot RLFs, raster/psth
-% binsize (in milliseconds) for psth
-psth_bin_size = 5;
 %------------------------------------------------------------------------
-% loop through channels, units
 %------------------------------------------------------------------------
-nChannels = length(channelList);
-for cIndx = 1:nChannels
-	% set current channel
-	channel = channelList(cIndx);
-	% and get list of units for this channel
-	if ~isempty(unitList{cIndx})
-		units = unitList{cIndx};
-		nUnits = length(units);
-	else
-		units = [];
-		nUnits = 0;
-	end
-	
-	if nUnits
-		
-		Hwf = cell(nUnits, 1);
-		for uIndx = 1:nUnits
-			% specify unit:
-			unit = units(uIndx);
+%{
+The actual sorted data in SpikeData is stored as a MATLAB Table object 
+(see MATLAB docs for more information) called Spikes:
 
-			%-------------------------------------------------------
-			% figure out file index for this test. the indexForTestName method of
-			% SpikeData class allows an easy way to do this.
-			%-------------------------------------------------------
-			findx = S.indexForTestName('BBN');
-			if isempty(findx)
-				fprintf('Test %s not found in %s\n', testToPlot, plxFile);
-				error('%s: bad testToPlot', mfilename);
-			end
+SpikeData.Spikes: 
+ Spikes: [#spikes×5 table]
 
-			%------------------------------------------------------------------------
-			% get spikes times struct (store in st) for this test, channel and unit
-			% spiketimes will be aligned to start of each sweep
-			%------------------------------------------------------------------------
-			fprintf('Getting data for file %d (%s), channel, %d unit %d\n', ...
-											findx, S.listFiles{findx}, channel, unit);
-			st = S.getSpikesByStim(findx, channel, unit);
+A table object is sort of like a combination of an array and a structure.
+ - Each row contains parameters of a single observation or data entry. 
+ - Each column contains information - which can be a value, string or 
+   array - for that data entry
 
-			% plot waveforms
-			plot_waveforms_from_table(st, S.Info.Fs);
-			Hwf{uIndx} = gca;
-		end
-		
-		% create new figure with subplots
-		figure
-		Hsub = cell(nUnits, 1);
-		for uIndx = 1:nUnits
-			Hsub{uIndx} = subplot(nUnits, 1, uIndx);
-			copyobj(Hwf{uIndx}, Hsub{uIndx});
-		end
-		
-	else
-		fprintf('No units on channel %d\n', channel);
-	end
+The table 'columns' (more properly called variables) are:
+ 'Channel'    'Unit'    'TS'    'PCA'    'Wave'
 
-end
+and each row corresponds to an entry for each detected spike
 
+Variables:
 
+ Channel     is the TDT A/D channel on which spike was detected
+ Unit        Plexon's unit ID number for that channel and spike
+ TS          time stamp for spike, in seconds
+ PCA         Plexon PCA values
+ Wave        [1, # samples] vector of samples for the detected waveform
+              sample rate should be same as raw .dat file data and is
+              stored in the SpikeData.SpikeInfo object Fs property, e.g.,
+              S.Info.Fs
 
+If we display the first 2 rows of S.Spikes, we get:
+>> S.Spikes(1:2, :)
+
+ans = 
+
+    Channel    Unit       TS            PCA            Wave     
+    _______    ____    _________    ___________    _____________
+
+     7         1       0.0010854    0    0    0    [1x64 double]
+    16         1       0.0024576    0    0    0    [1x64 double]
+%}
+%------------------------------------------------------------------------
+%------------------------------------------------------------------------
