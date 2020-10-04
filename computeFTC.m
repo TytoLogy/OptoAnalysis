@@ -1,20 +1,33 @@
-function varargout = computeFTC(spikeTimes, freqs, analysisWindow)
+function varargout = computeFTC(spikeTimes, freqs, analysisWindow, varargin)
 %------------------------------------------------------------------------
-% process Spiketimes into frequency tuning curve
+%  curvestruct = computeFTC(spikeTimes, freqs, analysisWindow, nbootstrap)
 %------------------------------------------------------------------------
 % TytoLogy:Experiments:OptoAnalysis
 %------------------------------------------------------------------------
-% assumes spikeTimes is in format:
-% 		spikeTimes{nFreqs, 1}
-% 			spikeTimes{n} = {nTrials, 1}
-% 				spikeTimes{n}{t} = [spike1_ms spike2_ms spike3ms ...
+% process Spiketimes into frequency tuning curve
+%------------------------------------------------------------------------
+% Input:
+% 	spikeTimes	cell array of spiketimes in milliseconds
+%						assumes spikeTimes is in format:
+%							spikeTimes{nFreqs, 1}
+%							spikeTimes{n} = {nTrials, 1}
+%							spikeTimes{n}{t} = [spike1_ms spike2_ms spike3ms ...
+% 	freqs			list of stimulus frequencies 
+%	analysisWindow		window in which tocount	spikes
+%							[start end] in milliseconds
+% 	Optional:
+% 		nbootstrap	number of iterations for bootstrap calculation of mean
+%						and median confidence intervales
+% 						default: 2000
+% 
 % Output:
 %  curveStruct			struct with fields:
 %		curveStruct.fname			filename
 % 		curveStruct.spikeCount	cell array of spike counts/trial at each x
 % 		curveStruct.xdata			stimulus freqs
 %		curveStruct.xlabel		label for x axis
-%		curveStruct.window		time window [tstart tend] in ms used for analysis
+%		curveStruct.window		time window [tstart tend] in ms used 
+%										for analysis
 % 		curveStruct.mean			mean values at each freq
 % 		curveStruct.std			std. dev. at each freq
 % 		curveStruct.mean_ci		cell array of 95% conf. intervals for mean
@@ -34,8 +47,14 @@ function varargout = computeFTC(spikeTimes, freqs, analysisWindow)
 % Revisions:
 %	28 Mar 2019 (SJS): updated to output curveStruct for use with
 %								plotCurveAndCI()
+%	3 Oct 2020 (SJS): added optional nbootstrap input
 %------------------------------------------------------------------------
 
+if isempty(varargin)
+	nbootstrap = 2000;
+else
+	nbootstrap = varargin{1};
+end
 
 nFreqs = length(freqs);
 spikeCount = cell(nFreqs, 1);
@@ -58,9 +77,9 @@ for n = 1:nFreqs
 	end
 	curveStruct.mean(n) = mean(spikeCount{n}); 
 	curveStruct.std(n) = std(spikeCount{n});
-	curveStruct.mean_ci{n} = bootci(2000, @mean, spikeCount{n});
+	curveStruct.mean_ci{n} = bootci(nbootstrap, @mean, spikeCount{n});
 	curveStruct.median(n) = median(spikeCount{n});
-	curveStruct.median_ci{n} = bootci(2000, @median, spikeCount{n});
+	curveStruct.median_ci{n} = bootci(nbootstrap, @median, spikeCount{n});
 end
 curveStruct.spikeCount = spikeCount;
 
