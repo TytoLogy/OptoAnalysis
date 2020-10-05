@@ -125,7 +125,7 @@ function varargout = plotFRA(FRA, varargin)
 		end
 
 		% draw pseudocolor checkerboard
-		PH = pcolor(xdata, ydata, FRA.MeanCount);
+		PH(1) = pcolor(xdata, ydata, FRA.MeanCount);
 		% show color legend
 		colorbar
 		% deal with labels and title
@@ -143,6 +143,7 @@ function varargout = plotFRA(FRA, varargin)
 		if yAtten
 			set(gca, 'YTickLabel', flipud(get(gca, 'YTickLabel')));
 		end
+		PH(2) = gca;
 	end
 
 	%------------------------------------------------
@@ -154,7 +155,7 @@ function varargout = plotFRA(FRA, varargin)
 			subplot(212);
 		end
 
-		WH = waterfall(xdata, ydata, FRA.MeanCount);
+		WH(1) = waterfall(xdata, ydata, FRA.MeanCount);
 		% labels, again deal with log labels
 		xlabel(xStr);
 		ylabel(yStr);
@@ -164,6 +165,7 @@ function varargout = plotFRA(FRA, varargin)
 		if yAtten
 			set(gca, 'YTickLabel', flipud(get(gca, 'YTickLabel')))
 		end
+		WH(2) = gca;
 	end
 	
 	%------------------------------------------------
