@@ -20,7 +20,7 @@ function varargout = plotFRA(FRA, varargin)
 %		'LIN_FREQ'		linear scale frequency axis
 %		'DB_ATTEN'		stimulus level in dB attenuation units (default)
 %		'DB_SPL'			stimulus level in dB SPL
-%
+%		'FIG_H'			draw in specified figure handle
 %  Output Args:
 %	 H		handle to figure
 %------------------------------------------------------------------------
@@ -35,6 +35,7 @@ function varargout = plotFRA(FRA, varargin)
 %
 % Revisions:
 %	27 Mar 2019 (SJS): added comments, input options
+%  4 Oct 2020 (SJS): added return handles
 %------------------------------------------------------------------------
 
 
@@ -46,6 +47,9 @@ function varargout = plotFRA(FRA, varargin)
 	xUnits = 'LOG';
 	yStr = 'Attenuation (dB)';	
 	yAtten = 1;
+	H = [];
+	PH = [];
+	WH = [];
 
 	%------------------------------------------------
 	% process inputs
@@ -76,6 +80,10 @@ function varargout = plotFRA(FRA, varargin)
 					yStr = 'dB SPL';
 					yAtten = 0;
 					n = n + 1;
+				% use specified figure?
+				case {'FIG_H'}
+					H = varargin{n+1};
+					n = n + 2;
 				otherwise
 					error('plotFRA: invalid option %s', varargin{n});
 			end
@@ -86,7 +94,12 @@ function varargout = plotFRA(FRA, varargin)
 	% preparatory things
 	%------------------------------------------------
 	% create figure
-	H = figure;
+	if isempty(H)
+		H = figure;
+	else
+		H = figure(H);
+	end
+	
 	% log or lin freq?
 	if strcmpi(xUnits, 'LOG')
 		xdata = log10(FRA.Freqs);
@@ -112,7 +125,7 @@ function varargout = plotFRA(FRA, varargin)
 		end
 
 		% draw pseudocolor checkerboard
-		pcolor(xdata, ydata, FRA.MeanCount);
+		PH = pcolor(xdata, ydata, FRA.MeanCount);
 		% show color legend
 		colorbar
 		% deal with labels and title
@@ -141,7 +154,7 @@ function varargout = plotFRA(FRA, varargin)
 			subplot(212);
 		end
 
-		waterfall(xdata, ydata, FRA.MeanCount);
+		WH = waterfall(xdata, ydata, FRA.MeanCount);
 		% labels, again deal with log labels
 		xlabel(xStr);
 		ylabel(yStr);
@@ -158,6 +171,8 @@ function varargout = plotFRA(FRA, varargin)
 	%------------------------------------------------
 	if nargout
 		varargout{1} = H;
+		varargout{2} = PH;
+		varargout{3} = WH;
 	end
 end
 
