@@ -25,6 +25,8 @@ function Dinf = correctTestType(Dinf)
 %           - pulled out of getFilteredOptoData
 %
 % Revisions:
+%   22 Jun 21 (SJS): adding fix for CLICK data - but might not be
+%   necessary!!!! commenting out
 %------------------------------------------------------------------------
 
 % try to get information from test Type
@@ -56,5 +58,24 @@ else
 	end
 	fprintf('%s: Test type: %s\n', mfilename, Dinf.test.Type);
 end
-	
-	
+
+% aborted check for click - can solve this elsewhere
+%{
+
+% check for click - mismatch in name and type
+% first, make sure Name is in char format
+if ~ischar(Dinf.test.Name)
+   Dinf.test.Name = char(Dinf.test.Name);
+end
+
+% first, look for click in test.Name
+if strcmpi(Dinf.test.Name, 'CLICK')
+   % if so, then check test.Type
+   if strcmpi(Dinf.test.Type, 'LEVEL')
+      % if test.Type is LEVEL, convert to 'CLICK'
+      fprintf('\tNote: Converting test.Type %s to CLICK\n', ...
+                     Dinf.test.Type);
+      Dinf.test.Type = 'LEVEL';
+   end
+end
+%}
