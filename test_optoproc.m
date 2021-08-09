@@ -29,12 +29,15 @@ LPFreq = 6000;
 psthBin = 10;
 
 % Channel for data
-channelNumber = 8;
+channelNumber = 5;
 
 %------------------------------------------------------------------------
 %% Specify Data File Location/Name
 %------------------------------------------------------------------------
 
+datafile = '1395_20200204_01_02_3600_FRA.dat';
+datafile = '1393_20200203_01_01_500_FRA.dat';
+% datafile = '1429_20200707_01_01_2942_FRA.dat';
 % set paths, data file name
 if ispc
 % 	datapath = 'E:\Data\SJS\1058';
@@ -42,7 +45,7 @@ if ispc
 % 	datapath = 'E:\Data\SJS\1012\20160727';
 % 	datafile = '1012_20160727_5_3_1_OPTO.dat';
 	datapath = 'E:\Data\SJS';
-else 
+elseif ismac
 	% assume this is a mac
 % 	datapath = '/Users/sshanbhag/Work/Data/Mouse/Opto/1012/20160727';
 % 	datafile = '1012_20160727_5_3_1_OPTO.dat';
@@ -51,12 +54,29 @@ else
 % 	datafile = '1110_20170515_01_01_4038_WAV_OPTO.dat';
 % 	datapath = '/Users/sshanbhag/Work/Data/Mouse/Opto/1108/20170529';
 	datapath = '/Users/sshanbhag/Desktop/20190722';
+elseif isunix
+   % if linux
+%    datapath = '/media/Data/NeuroData/Mouse/Raw';
+   datapath = '/media/Data/NeuroData/Mouse/Raw/1395/20200204';
+   datapath = '/media/Data/NeuroData/Mouse/Raw/1393/20200203';
+%    datapath = '/media/Data/NeuroData/Mouse/Raw/1429/20200707';
+else
+   datapath = '';
+   datafile = '';
 end
-% datafile = '1225_20190115_03_02_894_BBN.dat';
-datafile = '1323_20190722_01_02_508_WAV.dat';
+
+infile = fullfile(datapath, datafile);
+
 %% Read Data (don't plot it though)
-[D, Dinf, spikes, traces] = optoproc('file', fullfile(datapath, datafile), ...
+
+if ~isempty(infile)
+   [D, Dinf, spikes, traces] = ...
+                        optoproc('file', fullfile(datapath, datafile), ...
 													'channel', channelNumber);
+else
+   [D, Dinf, spikes, traces] = ...
+                        optoproc('channel', channelNumber);
+end
 
 % save('fratestdata.mat', 'D', 'Dinf', 'spikes', 'traces', 'datapath', 'datafile');
 
