@@ -1,8 +1,56 @@
 function FRA = computeFRA(spiketimes, freqs, levels, frawin)
 %------------------------------------------------------------------------
-%%	computeFRA(spikes, freqs, levels, frawin)
+% FRA = computeFRA(spikes, freqs, levels, frawin)
+%------------------------------------------------------------------------
+% TytoLogy:OptoAnalysis:computeFRA
+%------------------------------------------------------------------------
+% 
+% Using spiketimes, list of stimulus frequencies and levels and
+% an analysis window, calculate mean firing rates for each
+% stimulus freq and level combination and create FRA response structure
+% 
+%------------------------------------------------------------------------
+% Input Arguments:
+% 	spiketimes  {nlevels, nfreqs} cell array of spike times 
+%                 each element is an {ntrials, 1} cell array of
+%                 spiketime vectors
+%  freqs       [nfreqs, 1] vector of stimulus frequency values (Hz)
+%  levels      [levels, 1] vector of stimulus level values (dB SPL)
+%  frawin      [start, end] start and end time of analysis window, msec
+% 
+% Output Arguments:
+% 	FRA   FRA data struct
+%   SpikeTimes  spiketimes that are inside the analysis 
+%                 window defined in frawin
+%   window      frawin
+%   SpikeCount  {nlevels, nfreqs} cell array with vectors of # of spikes for 
+%               each stimulus presentation
+%   MeanCount   [nlevels, nfreqs] matrix of mean spike count
+%   StdDevCount [nlevels, nfreqs] matrix of spike count std. deviation
+%   Freqs       list of frequencies
+%   Levels      list of levels
+%   nfreqs      # frequencies
+%   nlevels     # of levels
+%   fname       source data file name
+%
+%------------------------------------------------------------------------
+% See also:
 %------------------------------------------------------------------------
 
+%------------------------------------------------------------------------
+% Sharad J. Shanbhag
+% sshanbhag@neomed.edu
+%------------------------------------------------------------------------
+% Created: ? (SJS)
+%
+% Revisions:
+%------------------------------------------------------------------------
+% TO DO:
+%------------------------------------------------------------------------
+
+%------------------------------------------------
+% get dimensions of data
+%------------------------------------------------
 nlevels = length(levels);
 nfreqs = length(freqs);
 [nl, nf] = size(spiketimes);
@@ -11,7 +59,8 @@ if (nl ~= nlevels) || (nf ~= nfreqs)
 end
 
 %------------------------------------------------
-%% get the spikes that are inside the analysis window
+% get the spikes that are inside the analysis window, 
+% store in SpikeTimes
 %------------------------------------------------
 FRA.SpikeTimes = cell(nlevels, nfreqs);
 FRA.window = frawin;
