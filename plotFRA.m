@@ -21,6 +21,15 @@ function varargout = plotFRA(FRA, varargin)
 %		'DB_ATTEN'		stimulus level in dB attenuation units (default)
 %		'DB_SPL'			stimulus level in dB SPL
 %		'FIG_H'			draw in specified figure handle
+%     'INTERP', <npts>    interpolate to smooth plot
+%                          if no value given, default of 100 is used
+%                         Data will be interpolated across frequencies at
+%                         each level using makima() interpolation method
+%                         (Modified Akima piecewise cubic Hermite 
+%                         interpolation.)
+%     'DRAW_MESH', <true|false>    draw mesh between boxes in FRA "heat"
+%                                  plot.  default is "true"
+%
 %  Output Args:
 %	 H		handle to figure
 %------------------------------------------------------------------------
@@ -36,8 +45,8 @@ function varargout = plotFRA(FRA, varargin)
 % Revisions:
 %	27 Mar 2019 (SJS): added comments, input options
 %  4 Oct 2020 (SJS): added return handles
+%  16 Mar 2022 (SJS): added interpolation, mesh option
 %------------------------------------------------------------------------
-
 
 	%------------------------------------------------
 	% defaults
@@ -47,6 +56,9 @@ function varargout = plotFRA(FRA, varargin)
 	xUnits = 'LOG';
 	yStr = 'Attenuation (dB)';	
 	yAtten = 1;
+   interpolateData = false;
+   interpolateN = 100;
+   drawMesh = true;
 	H = [];
 	PH = [];
 	WH = [];
@@ -84,6 +96,22 @@ function varargout = plotFRA(FRA, varargin)
 				case {'FIG_H'}
 					H = varargin{n+1};
 					n = n + 2;
+               % interpolate data?
+            case {'INTERP', 'INTERPOLATE'}
+               interpolateData = true;
+               if (n < length(varargin)) && isnumeric(varargin{n+1})
+                  interpolateN = varargin{n+1};
+                  n = n+2;
+               else
+                  n = n+1;
+               end
+            case {'DRAW_MESH'}
+               if islogical(varargin{n+1})
+                  drawMesh = varargin{n+1};
+                  n = n+ 2;
+               else
+                  error('%s: input error for DRAW_MESH option', mfilename);
+               end
 				otherwise
 					error('plotFRA: invalid option %s', varargin{n});
 			end
@@ -93,58 +121,75 @@ function varargout = plotFRA(FRA, varargin)
 	%------------------------------------------------
 	% preparatory things
 	%------------------------------------------------
-	% create figure
-	if isempty(H)
-		H = figure;
-	else
-		H = figure(H);
-	end
-	
+   % create figure
+   if isempty(H)
+      H = figure;
+   else
+      H = figure(H);
+   end
+
+   % interpolate points?
+   if interpolateData
+      xdata = linspace(FRA.Freqs(1), FRA.Freqs(end), interpolateN);
+      zdata = zeros(FRA.nlevels, length(xdata));
+      for l = 1:FRA.nlevels
+         zdata(l, :) = makima(FRA.Freqs, FRA.MeanCount(l, :), xdata);
+      end
+   else
+      xdata = FRA.Freqs;
+      zdata = FRA.MeanCount;
+   end
+   
 	% log or lin freq?
-	if strcmpi(xUnits, 'LOG')
-		xdata = log10(FRA.Freqs);
-	else
-		xdata = FRA.Freqs;
-	end
+   if strcmpi(xUnits, 'LOG')
+      xdata = log10(xdata);
+   end
+   
 	% need to flip sorted atten to get
 	% higher atten (lower amplitude tones) at bottom of plot and
 	% lower atten (higher amp) at top, per FRA plot convention
 	% the y axis labels will be in reverse order, but we'll take care
 	% of that later
-	if yAtten
-		ydata = fliplr(FRA.Levels);
-	else
-		ydata = FRA.Levels;
-	end
+   if yAtten
+      ydata = fliplr(FRA.Levels);
+   else
+      ydata = FRA.Levels;
+   end
 	%------------------------------------------------
 	% plot as color patch
 	%------------------------------------------------
-	if any(strcmpi(plotType, {'CHECKER', 'BOTH'}))
-		if strcmpi(plotType, 'BOTH')
-			subplot(211);
-		end
+   if any(strcmpi(plotType, {'CHECKER', 'BOTH'}))
+      if strcmpi(plotType, 'BOTH')
+         subplot(211);
+      end
 
-		% draw pseudocolor checkerboard
-		PH(1) = pcolor(xdata, ydata, FRA.MeanCount);
-		% show color legend
-		colorbar
-		% deal with labels and title
-		xlabel(xStr);
-		ylabel(yStr);
-		title(	{	FRA.fname, ...
-						sprintf('Avg Spike Count, [%d-%d] ms window', ...
-													FRA.window(1), FRA.window(2)), ...
-					}, ...
-					'Interpreter', 'none');
-		% re-do X tick labels to that they're more readable
-		xtl = get_lin_or_log_xlabel(get(gca, 'XTick'), xUnits);
-		set(gca, 'XTickLabel', xtl);
-		% correct the Y tick labels, as promised
-		if yAtten
-			set(gca, 'YTickLabel', flipud(get(gca, 'YTickLabel')));
-		end
-		PH(2) = gca;
-	end
+      % draw pseudocolor checkerboard
+      PH(1) = pcolor(xdata, ydata, zdata);
+      % show color legend
+      colorbar
+      % deal with labels and title
+      xlabel(xStr);
+      ylabel(yStr);
+      title(	{	FRA.fname, ...
+                  sprintf('Avg Spike Count, [%d-%d] ms window', ...
+                                       FRA.window(1), FRA.window(2)), ...
+               }, ...
+               'Interpreter', 'none');
+      % re-do X tick labels to that they're more readable
+      xtl = get_lin_or_log_xlabel(get(gca, 'XTick'), xUnits);
+      set(gca, 'XTickLabel', xtl);
+      % correct the Y tick labels, as promised
+      if yAtten
+         set(gca, 'YTickLabel', flipud(get(gca, 'YTickLabel')));
+      end
+      % if drawMesh is false, set the surface edge color to 'none'
+      if ~drawMesh
+         tmpH = get(gca, 'Children');
+         tmpH.EdgeColor = 'none';
+      end
+      PH(2) = gca;
+      
+   end
 
 	%------------------------------------------------
 	% create subplot and plot waterfall 
@@ -155,7 +200,7 @@ function varargout = plotFRA(FRA, varargin)
 			subplot(212);
 		end
 
-		WH(1) = waterfall(xdata, ydata, FRA.MeanCount);
+		WH(1) = waterfall(xdata, ydata, zdata);
 		% labels, again deal with log labels
 		xlabel(xStr);
 		ylabel(yStr);
@@ -175,6 +220,7 @@ function varargout = plotFRA(FRA, varargin)
 		varargout{1} = H;
 		varargout{2} = PH;
 		varargout{3} = WH;
+      varargout{4} = {xdata, ydata, zdata};
 	end
 end
 
