@@ -20,7 +20,10 @@ function varargout = plotFRA(FRA, varargin)
 %		'LIN_FREQ'		linear scale frequency axis
 %		'DB_ATTEN'		stimulus level in dB attenuation units (default)
 %		'DB_SPL'			stimulus level in dB SPL
-%		'FIG_H'			draw in specified figure handle
+%		'FIG_H', <handle>			draw in specified figure handle
+%     'AX_H', <handles>       draw in specified axes
+%                         *** must be 2x1 array of axes handles
+%                             handles(1) for FRA, handles(2) for waterfall
 %     'INTERP', <npts>    interpolate to smooth plot
 %                          if no value given, default of 100 is used
 %                         Data will be interpolated across frequencies at
@@ -32,6 +35,9 @@ function varargout = plotFRA(FRA, varargin)
 %
 %  Output Args:
 %	 H		handle to figure
+%   PH   handles to [pcolor() surface;  pcolor() axes (subplot(211))]
+%   WH   handles to [waterfall() patch; waterfall() axes (subplot(212))]
+%   plotdata  {xdata, ydata, zdata}
 %------------------------------------------------------------------------
 % See Also: computeFRA, optoproc
 %------------------------------------------------------------------------
@@ -46,6 +52,7 @@ function varargout = plotFRA(FRA, varargin)
 %	27 Mar 2019 (SJS): added comments, input options
 %  4 Oct 2020 (SJS): added return handles
 %  16 Mar 2022 (SJS): added interpolation, mesh option
+%  19 Mar 2022 (SJS): added axes handles input
 %------------------------------------------------------------------------
 
 	%------------------------------------------------
@@ -59,9 +66,13 @@ function varargout = plotFRA(FRA, varargin)
    interpolateData = false;
    interpolateN = 100;
    drawMesh = true;
-	H = [];
-	PH = [];
-	WH = [];
+   % figure handle
+	figH = [];
+   % axes handles
+   axH = [];
+   % output plot handles
+	PH = [];    % FRA pcolor() handle
+	WH = [];    
 
 	%------------------------------------------------
 	% process inputs
@@ -94,7 +105,11 @@ function varargout = plotFRA(FRA, varargin)
 					n = n + 1;
 				% use specified figure?
 				case {'FIG_H'}
-					H = varargin{n+1};
+					figH = varargin{n+1};
+					n = n + 2;
+				% use specified axes?
+				case {'AX_H'}
+					axH = varargin{n+1};
 					n = n + 2;
                % interpolate data?
             case {'INTERP', 'INTERPOLATE'}
@@ -116,18 +131,53 @@ function varargout = plotFRA(FRA, varargin)
 					error('plotFRA: invalid option %s', varargin{n});
 			end
 		end
-	end
+   end
+   
 
 	%------------------------------------------------
 	% preparatory things
 	%------------------------------------------------
-   % create figure
-   if isempty(H)
-      H = figure;
+   % create or set figure
+   if isempty(figH) && isempty(axH)
+      % if no figure or axes provided, create a figure
+      figH = figure;
+   elseif isempty(figH) && ~isempty(axH)
+      % if no figure and axes provided, use parent as figure
+      figH = get(axH(1), 'Parent');
+      % make current
+      figure(figH);
    else
-      H = figure(H);
+      % make provided figure current
+      figH = figure(figH);
    end
-
+   
+   % create or set axes
+   if isempty(axH)
+      if strcmpi(plotType, 'BOTH')
+         % if both plots to be drawn, create subplots
+         % create subplots
+         figure(figH);
+         axH(1) = subplot(211);
+         axH(2) = subplot(212);
+         axes(axH(1));
+      else
+         % create single axes in current figure
+         axH = axes(figH);
+      end
+   else
+      % try setting each axes as current just to check
+      if strcmpi(plotType, 'CHECKER')
+         axes(axH(1));
+      elseif strcmpi(plotType, 'WATERFALL')
+         axes(axH(1));
+      elseif strcmpi(plotType, 'BOTH')
+           axes(axH(2));
+           axes(axH(1));
+      else
+         error('Unknown options %s', plotType)
+      end
+   end
+   
    % interpolate points?
    if interpolateData
       xdata = linspace(FRA.Freqs(1), FRA.Freqs(end), interpolateN);
@@ -159,36 +209,37 @@ function varargout = plotFRA(FRA, varargin)
 	% plot as color patch
 	%------------------------------------------------
    if any(strcmpi(plotType, {'CHECKER', 'BOTH'}))
-      if strcmpi(plotType, 'BOTH')
-         subplot(211);
-      end
+%       if strcmpi(plotType, 'BOTH')
+%          subplot(211);
+%       end
 
       % draw pseudocolor checkerboard
-      PH(1) = pcolor(xdata, ydata, zdata);
+      PH(1) = pcolor(axH(1), xdata, ydata, zdata);
+      PH(2) = axH(1);
       % show color legend
-      colorbar
+      colorbar(PH(2));
       % deal with labels and title
-      xlabel(xStr);
-      ylabel(yStr);
-      title(	{	FRA.fname, ...
+      xlabel(PH(2), xStr);
+      ylabel(PH(2), yStr);
+      title(PH(2), ...
+                  {	FRA.fname, ...
                   sprintf('Avg Spike Count, [%d-%d] ms window', ...
                                        FRA.window(1), FRA.window(2)), ...
                }, ...
                'Interpreter', 'none');
       % re-do X tick labels to that they're more readable
-      xtl = get_lin_or_log_xlabel(get(gca, 'XTick'), xUnits);
-      set(gca, 'XTickLabel', xtl);
+      xtl = get_lin_or_log_xlabel(get(PH(2), 'XTick'), xUnits);
+      set(PH(2), 'XTickLabel', xtl);
       % correct the Y tick labels, as promised
       if yAtten
-         set(gca, 'YTickLabel', flipud(get(gca, 'YTickLabel')));
+         set(PH(2), 'YTickLabel', flipud(get(gca, 'YTickLabel')));
       end
       % if drawMesh is false, set the surface edge color to 'none'
       if ~drawMesh
-         tmpH = get(gca, 'Children');
-         tmpH.EdgeColor = 'none';
+%          tmpH = get(PH(2), 'Children');
+%          tmpH.EdgeColor = 'none';
+         set(PH(1), 'EdgeColor', 'none')
       end
-      PH(2) = gca;
-      
    end
 
 	%------------------------------------------------
@@ -196,28 +247,34 @@ function varargout = plotFRA(FRA, varargin)
 	% (in fashion similar to color patch)
 	%------------------------------------------------
 	if any(strcmpi(plotType, {'WATERFALL', 'BOTH'}))
-		if strcmpi(plotType, 'BOTH')
-			subplot(212);
-		end
+% 		if strcmpi(plotType, 'BOTH')
+% 			subplot(212);
+% 		end
 
-		WH(1) = waterfall(xdata, ydata, zdata);
+      if strcmpi(plotType, 'BOTH')
+   		WH(1) = waterfall(axH(2), xdata, ydata, zdata);
+         WH(2) = axH(2);
+      else
+   		WH(1) = waterfall(axH(1), xdata, ydata, zdata);
+         WH(2) = axH(1);
+      end
+
 		% labels, again deal with log labels
-		xlabel(xStr);
-		ylabel(yStr);
-		zlabel('Spike Count');
-		xtl = get_lin_or_log_xlabel(get(gca, 'XTick'), xUnits);
-		set(gca, 'XTickLabel', xtl);
+		xlabel(WH(2), xStr);
+		ylabel(WH(2), yStr);
+		zlabel(WH(2), 'Spike Count');
+		xtl = get_lin_or_log_xlabel(get(WH(2), 'XTick'), xUnits);
+		set(WH(2), 'XTickLabel', xtl);
 		if yAtten
-			set(gca, 'YTickLabel', flipud(get(gca, 'YTickLabel')))
+			set(WH(2), 'YTickLabel', flipud(get(WH(2), 'YTickLabel')))
 		end
-		WH(2) = gca;
 	end
 	
 	%------------------------------------------------
 	% assign output
 	%------------------------------------------------
 	if nargout
-		varargout{1} = H;
+		varargout{1} = figH;
 		varargout{2} = PH;
 		varargout{3} = WH;
       varargout{4} = {xdata, ydata, zdata};
