@@ -1,6 +1,6 @@
 function varargout = plotFRA(FRA, varargin)
 %------------------------------------------------------------------------
-%  H = plotFRA(FRA, varargin)
+% [H, PH, WH, plotdata] = plotFRA(FRA, varargin)
 %------------------------------------------------------------------------
 % TytoLogy:Experiments:OptoAnalysis
 %------------------------------------------------------------------------
