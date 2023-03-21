@@ -69,6 +69,8 @@ function varargout = plotFRA(FRA, varargin)
 %       - caller has to provide the value for pad level and pad freq, 
 %         since these are case-specific
 %       - internal function should be written to modularize padding (done)
+%  21 Mar 2023: some cleaning up, simplifying. also fixing some tick
+%               and layout things
 %------------------------------------------------------------------------
 
 %------------------------------------------------
@@ -88,15 +90,15 @@ padFreq = false; %#ok<NASGU>
 padFreqVal = [];
 
 %------------------------------------------------
-% allocate graphics handles
+% initialize placeholders for graphics handles
 %------------------------------------------------
 % figure handle
 figH = [];
 % axes handles
 axH = [];
 % output plot handles
-PH = [];    % FRA pcolor() handle
-WH = [];    
+PH = [];    % FRA pcolor() surface handle and axes
+WH = [];    % FRA waterfall() patch handle and axes
 
 %------------------------------------------------
 % process inputs
@@ -171,9 +173,9 @@ if nargin > 0
 end
 
 
-%------------------------------------------------
+%------------------------------------------------------------------------
 % preparatory things
-%------------------------------------------------
+%------------------------------------------------------------------------
 % create or set figure
 if isempty(figH) && isempty(axH)
    % if no figure or axes provided, create a figure
@@ -215,48 +217,44 @@ else
    end
 end
 
-% 20 March 202: new method
+%------------------------------------------------------------------------
+% 20 March 202: new method for creating data vectors 
+% this is to deal with the different padding and interpolation options
+%------------------------------------------------------------------------
 [xdata, ydata, zdata] = generate_xyzdata(FRA, padFreqVal, padLevelVal, ...
                                interpolateData, interpolateN);
 
-%{
-% interpolate points?
-if interpolateData
-   xdata = linspace(FRA.Freqs(1), FRA.Freqs(end), interpolateN);
-   zdata = zeros(FRA.nlevels, length(xdata));
-   for l = 1:FRA.nlevels
-      zdata(l, :) = makima(FRA.Freqs, FRA.MeanCount(l, :), xdata);
-   end      
-else
-   xdata = FRA.Freqs;
-   zdata = FRA.MeanCount;
-end
-%}
-
+%------------------------------------------------
 % log or lin freq?
+%------------------------------------------------
 if strcmpi(xUnits, 'LOG')
    xdata = log10(xdata);
 end
 
+%------------------------------------------------
 % need to flip sorted atten to get
 % higher atten (lower amplitude tones) at bottom of plot and
 % lower atten (higher amp) at top, per FRA plot convention
 % the y axis labels will be in reverse order, but we'll take care
 % of that later
+%------------------------------------------------
 if yAtten
    ydata = fliplr(ydata);
 end
 
-%------------------------------------------------
+%------------------------------------------------------------------------
+%------------------------------------------------------------------------
 % plot as color patch
-%------------------------------------------------
+%------------------------------------------------------------------------
+%------------------------------------------------------------------------
 if any(strcmpi(plotType, {'CHECKER', 'BOTH'}))
+   PH = gobjects(2, 1);
    % draw pseudocolor checkerboard using pcolor (generates surface object)
    PH(1) = pcolor(axH(1), xdata, ydata, zdata);
    PH(2) = axH(1);
    
    % show color legend
-   colorbar(PH(2));
+   cH = colorbar(PH(2));
    % deal with labels and title
    xlabel(PH(2), xStr);
    ylabel(PH(2), yStr);
@@ -277,14 +275,21 @@ if any(strcmpi(plotType, {'CHECKER', 'BOTH'}))
    if ~drawMesh
       set(PH(1), 'EdgeColor', 'none')
    end
+   % turn off box, tickdir out
+   PH(2).TickDir = 'out';
+   PH(2).Box = 'off';
+   % change colorbar ticks
+   cH.TickDirection = 'out';
 end
 
-%------------------------------------------------
+%------------------------------------------------------------------------
+%------------------------------------------------------------------------
 % create subplot and plot waterfall 
 % (in fashion similar to color patch)
-%------------------------------------------------
+%------------------------------------------------------------------------
+%------------------------------------------------------------------------
 if any(strcmpi(plotType, {'WATERFALL', 'BOTH'}))
-
+   WH = gobjects(2, 1);
    if strcmpi(plotType, 'BOTH')
       WH(1) = waterfall(axH(2), xdata, ydata, zdata);
       WH(2) = axH(2);
@@ -299,14 +304,18 @@ if any(strcmpi(plotType, {'WATERFALL', 'BOTH'}))
    zlabel(WH(2), 'Spike Count');
    xtl = get_lin_or_log_xlabel(get(WH(2), 'XTick'), xUnits);
    set(WH(2), 'XTickLabel', xtl);
+   % set yticks
+   WH(2).YTick = ydata;
    if yAtten
       set(WH(2), 'YTickLabel', flipud(get(WH(2), 'YTickLabel')))
    end
 end
 
-%------------------------------------------------
+%------------------------------------------------------------------------
+%------------------------------------------------------------------------
 % assign output
-%------------------------------------------------
+%------------------------------------------------------------------------
+%------------------------------------------------------------------------
 if nargout
    varargout{1} = figH;
    varargout{2} = PH;
