@@ -68,7 +68,7 @@ function varargout = plotFRA(FRA, varargin)
 %         these are added to xdata, ydata, zdata
 %       - caller has to provide the value for pad level and pad freq, 
 %         since these are case-specific
-%       - internal function should be written to modularize padding 
+%       - internal function should be written to modularize padding (done)
 %------------------------------------------------------------------------
 
 %------------------------------------------------
@@ -82,9 +82,9 @@ yAtten = 1;
 interpolateData = false;
 interpolateN = 100;
 drawMesh = true;
-padLevel = false;
+padLevel = false; %#ok<NASGU>
 padLevelVal = [];
-padFreq = false;
+padFreq = false; %#ok<NASGU>
 padFreqVal = [];
 
 %------------------------------------------------
@@ -154,13 +154,13 @@ if nargin > 0
             end
          % pad levels to have checker plot draw patches for all levels?
          case {'PADLEVEL'}
-            padLevel = true;
+            padLevel = true; %#ok<NASGU>
             padLevelVal = varargin{n+1};
             n = n+2;
          % pad frequencies to have checker plot draw patches 
          % for all frequencies?
          case {'PADFREQ'}
-            padFreq = true;
+            padFreq = true; %#ok<NASGU>
             padFreqVal = varargin{n+1};
             n = n+2;
             
@@ -215,36 +215,9 @@ else
    end
 end
 
-
-
- if padLevel || padFreq
-      if padLevel
-         if yAtten
-            % add padLevelVal to beginning of ydata
-            ydata = [padLevelVal ydata];
-         else
-            % add padLevelVal to end of ydata
-            ydata = [ydata padLevelVal];
-         end
-         % append duplicate bottom row of zdata
-         zdata = [zdata; zdata(end, :)];
-      end
-      if padFreq
-         % append padFreqVal to end of xdata
-         xdata = [xdata padFreqVal];
-         % append duplicate last column to zdata
-         zdata = [zdata; zdata(:, end)];
-      end
-      % draw checkerboard plot using pcolor (generates surface object)
-      PH(1) = pcolor(axH(1), xdata, ydata, zdata);
-      PH(2) = axH(1);
-else
-      % draw checkerboard plot using pcolor (generates surface object)
-      PH(1) = pcolor(axH(1), xdata, ydata, zdata);
-      PH(2) = axH(1);
-end
-
-generate_xyzdata;
+% 20 March 202: new method
+[xdata, ydata, zdata] = generate_xyzdata(FRA, padFreqVal, padLevelVal, ...
+                               interpolateData, interpolateN);
 
 %{
 % interpolate points?
@@ -271,18 +244,13 @@ end
 % the y axis labels will be in reverse order, but we'll take care
 % of that later
 if yAtten
-   ydata = fliplr(FRA.Levels);
-else
-   ydata = FRA.Levels;
+   ydata = fliplr(ydata);
 end
+
 %------------------------------------------------
 % plot as color patch
 %------------------------------------------------
 if any(strcmpi(plotType, {'CHECKER', 'BOTH'}))
-%       if strcmpi(plotType, 'BOTH')
-%          subplot(211);
-%       end
-
    % draw pseudocolor checkerboard using pcolor (generates surface object)
    PH(1) = pcolor(axH(1), xdata, ydata, zdata);
    PH(2) = axH(1);
@@ -307,8 +275,6 @@ if any(strcmpi(plotType, {'CHECKER', 'BOTH'}))
    end
    % if drawMesh is false, set the surface edge color to 'none'
    if ~drawMesh
-%          tmpH = get(PH(2), 'Children');
-%          tmpH.EdgeColor = 'none';
       set(PH(1), 'EdgeColor', 'none')
    end
 end
@@ -318,9 +284,6 @@ end
 % (in fashion similar to color patch)
 %------------------------------------------------
 if any(strcmpi(plotType, {'WATERFALL', 'BOTH'}))
-% 		if strcmpi(plotType, 'BOTH')
-% 			subplot(212);
-% 		end
 
    if strcmpi(plotType, 'BOTH')
       WH(1) = waterfall(axH(2), xdata, ydata, zdata);
@@ -361,9 +324,10 @@ end   %********** END OF plotFRA FUNCTION ******************
 %***********************************************************************
 %***********************************************************************
 
-%------------------------------------------------
+%------------------------------------------------------------------------
+%------------------------------------------------------------------------
 % internal function to format tick labels
-%------------------------------------------------
+%------------------------------------------------------------------------
 function xtl = get_lin_or_log_xlabel(xt, xUnits)
 
 	xtl = cell(length(xt), 1);
@@ -377,4 +341,108 @@ function xtl = get_lin_or_log_xlabel(xt, xUnits)
 			xtl{n} = sprintf('%.0f', 0.001 * xt(n));
 		end
 	end
+end
+%------------------------------------------------------------------------
+%------------------------------------------------------------------------
+
+
+%------------------------------------------------------------------------
+%------------------------------------------------------------------------
+function [xdata, ydata, zdata] = ...
+             generate_xyzdata(FRA, padFreqVal, padLevelVal, ...
+                               interpolateData, interpolateN)
+%------------------------------------------------------------------------
+%------------------------------------------------------------------------
+
+   %---------------------------------------------------------------------
+   % temp vals for script use
+   %---------------------------------------------------------------------
+   %{
+   interpolateData = true;
+   interpolateN = 100;
+   % need to set pad level and freq
+   % level is easy 
+   padLevelVal = 90;
+   % for freq, need to find next 1/3 octave freq
+   fOct = octaves(3, 4000, 110000, 2);
+   padFreqVal = fOct(end);
+   %}
+   %---------------------------------------------------------------------
+   % can determine if freq, level are to be padded by status of 
+   % padFreqVal and padLevelVal
+   %---------------------------------------------------------------------
+   if ~isempty(padFreqVal)
+      padFreq = true;
+   else
+      padFreq = false;
+   end
+   if ~isempty(padLevelVal)
+      padLevel = true;
+   else
+      padLevel = false;
+   end
+   %---------------------------------------------------------------------
+   % set Frequencies
+   %---------------------------------------------------------------------
+   if padFreq
+      Freqs = [FRA.Freqs padFreqVal];
+   else
+      Freqs = FRA.Freqs;
+   end
+   %---------------------------------------------------------------------
+   % set Levels
+   %---------------------------------------------------------------------
+   if padLevel
+      Levels = [FRA.Levels padLevelVal];
+   else
+      Levels = FRA.Levels;
+   end
+   %---------------------------------------------------------------------
+   % set MeanCount - this will depend on padding options
+   %---------------------------------------------------------------------
+   if ~padFreq && ~padLevel
+      % no padding, no alterations to FRA.MeanCount
+      MeanCount = FRA.MeanCount;
+
+   elseif padFreq && padLevel
+      % pad both Freqs (cols) and Levels (rows)
+      % first, add a "dummy" freq column to Mean Count 
+      MeanCount = [FRA.MeanCount FRA.MeanCount(:, end)];
+      % then add a "dummy" level row to MeanCount
+      MeanCount = [MeanCount; MeanCount(end, :)];   
+
+   elseif padFreq && ~padLevel
+      % no padding of level (rows), just freqs (cols)
+      % add a "dummy" freq column to Mean Count 
+      MeanCount = [FRA.MeanCount FRA.MeanCount(:, end)];
+
+   elseif ~padFreq && padLevel
+      % no padding of Freqs (cols), just Levels (rows)
+      % add a "dummy" level row to MeanCount
+      MeanCount = [FRA.MeanCount; FRA.MeanCount(end, :)];   
+
+   else
+      % degenerate case
+      error('WTF????');
+   end
+
+   %---------------------------------------------------------------------
+   % interpolate points (along freqs)?
+   %---------------------------------------------------------------------
+   if interpolateData
+      % xdata will be "grid" of frequencies
+      xdata = linspace(Freqs(1), Freqs(end), interpolateN);
+      % assign zdata using sizes of ydata (levels) and xdata (freqs)
+      zdata = zeros(length(Levels), length(xdata));
+      for l = 1:length(Levels)
+         zdata(l, :) = makima(Freqs, MeanCount(l, :), xdata);
+      end
+   else
+      % no interpolation, so just assign Freqs to xdata, MeanCount to zdata.
+      % note that these may or may not be padded!
+      xdata = Freqs;
+      zdata = MeanCount;
+   end
+   ydata = Levels;
+
 end
