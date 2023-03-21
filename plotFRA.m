@@ -53,6 +53,18 @@ function varargout = plotFRA(FRA, varargin)
 %  4 Oct 2020 (SJS): added return handles
 %  16 Mar 2022 (SJS): added interpolation, mesh option
 %  19 Mar 2022 (SJS): added axes handles input
+%  20 Mar 2023 (SJS): 
+%       because of the way surfaces are drawn, the checkerboard 
+%       plot doesn't draw patches for the last level row and
+%       frequency column. One way to fix:
+%       - adding the 'PADLEVEL' and 'PADFREQ' options that
+%         will add specified level and freq to FRA.Levels, and FRA.Freqs
+%         (with changes to FRA.nlevels, FRA.nfreqs as well), and repeat
+%         the last row and column of MeanCount (and SpikeCount, 
+%         SpikeTimes).
+%       - caller has to provide the value for pad level and pad freq, 
+%         since these are case-specific
+%       - internal function should be written to modularize padding 
 %------------------------------------------------------------------------
 
 	%------------------------------------------------
