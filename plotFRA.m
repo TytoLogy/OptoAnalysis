@@ -69,8 +69,10 @@ function varargout = plotFRA(FRA, varargin)
 %       - caller has to provide the value for pad level and pad freq, 
 %         since these are case-specific
 %       - internal function should be written to modularize padding (done)
-%  21 Mar 2023: some cleaning up, simplifying. also fixing some tick
-%               and layout things
+%  21 Mar 2023: 
+%       - some cleaning up, simplifying. also fixing some tick
+%         and layout things
+%       - trapping zdata values (interpolated) that are < 0
 %------------------------------------------------------------------------
 
 %------------------------------------------------
@@ -174,9 +176,14 @@ end
 
 
 %------------------------------------------------------------------------
+%------------------------------------------------------------------------
 % preparatory things
 %------------------------------------------------------------------------
+%------------------------------------------------------------------------
+
+%------------------------------------------------------------------------
 % create or set figure
+%------------------------------------------------------------------------
 if isempty(figH) && isempty(axH)
    % if no figure or axes provided, create a figure
    figH = figure;
@@ -189,8 +196,9 @@ else
    % make provided figure current
    figH = figure(figH);
 end
-
+%------------------------------------------------------------------------
 % create or set axes
+%------------------------------------------------------------------------
 if isempty(axH)
    if strcmpi(plotType, 'BOTH')
       % if both plots to be drawn, create subplots
@@ -218,26 +226,36 @@ else
 end
 
 %------------------------------------------------------------------------
+%------------------------------------------------------------------------
 % 20 March 202: new method for creating data vectors 
 % this is to deal with the different padding and interpolation options
+%------------------------------------------------------------------------
 %------------------------------------------------------------------------
 [xdata, ydata, zdata] = generate_xyzdata(FRA, padFreqVal, padLevelVal, ...
                                interpolateData, interpolateN);
 
-%------------------------------------------------
-% log or lin freq?
-%------------------------------------------------
+%------------------------------------------------------------------------
+% need to do quick trap of zdata values < 0 if interpolated
+%------------------------------------------------------------------------
+if interpolateData
+   % set zdata < 0 to 0
+   zdata(zdata < 0) = 0;
+end
+
+%------------------------------------------------------------------------
+% log or lin freq (x data)?
+%------------------------------------------------------------------------
 if strcmpi(xUnits, 'LOG')
    xdata = log10(xdata);
 end
 
-%------------------------------------------------
+%------------------------------------------------------------------------
 % need to flip sorted atten to get
 % higher atten (lower amplitude tones) at bottom of plot and
 % lower atten (higher amp) at top, per FRA plot convention
 % the y axis labels will be in reverse order, but we'll take care
 % of that later
-%------------------------------------------------
+%------------------------------------------------------------------------
 if yAtten
    ydata = fliplr(ydata);
 end
