@@ -32,6 +32,11 @@ function varargout = plotFRA(FRA, varargin)
 %                         interpolation.)
 %     'DRAW_MESH', <true|false>    draw mesh between boxes in FRA "heat"
 %                                  plot.  default is "true"
+%     'PADLEVEL', <level value>    add "dummy" row of levels to ensure
+%                                  checker plot shows highest level
+%     'PADFREQ', <freq value>      add "dummy" row of frequencies to 
+%                                  ensure checker plot shows highest 
+%                                  frequency 
 %
 %  Output Args:
 %	 H		handle to figure
@@ -59,239 +64,302 @@ function varargout = plotFRA(FRA, varargin)
 %       frequency column. One way to fix:
 %       - adding the 'PADLEVEL' and 'PADFREQ' options that
 %         will add specified level and freq to FRA.Levels, and FRA.Freqs
-%         (with changes to FRA.nlevels, FRA.nfreqs as well), and repeat
-%         the last row and column of MeanCount (and SpikeCount, 
-%         SpikeTimes).
+%         and repeat the last row and column of MeanCount:
+%         these are added to xdata, ydata, zdata
 %       - caller has to provide the value for pad level and pad freq, 
 %         since these are case-specific
 %       - internal function should be written to modularize padding 
 %------------------------------------------------------------------------
 
-	%------------------------------------------------
-	% defaults
-	%------------------------------------------------
-	plotType = 'BOTH';
-	xStr = 'Frequency (kHz)';
-	xUnits = 'LOG';
-	yStr = 'Attenuation (dB)';	
-	yAtten = 1;
-   interpolateData = false;
-   interpolateN = 100;
-   drawMesh = true;
-   % figure handle
-	figH = [];
-   % axes handles
-   axH = [];
-   % output plot handles
-	PH = [];    % FRA pcolor() handle
-	WH = [];    
+%------------------------------------------------
+% defaults
+%------------------------------------------------
+plotType = 'BOTH';
+xStr = 'Frequency (kHz)';
+xUnits = 'LOG';
+yStr = 'Attenuation (dB)';	
+yAtten = 1;
+interpolateData = false;
+interpolateN = 100;
+drawMesh = true;
+padLevel = false;
+padLevelVal = [];
+padFreq = false;
+padFreqVal = [];
 
-	%------------------------------------------------
-	% process inputs
-	%------------------------------------------------
-	if nargin > 0
-		n = 1;
-		while n <= length(varargin)
-			switch	upper(varargin{n})
-				% plot type?
-				case {'BOTH', 'CHECKER', 'WATERFALL'}
-					plotType = upper(varargin{n});
-					n = n + 1;
-				% log frequency scale
-				case {'LOG_FREQ', 'LOGF', 'LOG'}
-					xUnits = 'LOG';
-					n = n + 1;
-				% linear freq scale
-				case {'LIN_FREQ', 'LINF', 'LIN'}
-					xUnits = 'LIN';
-					n = n + 1;
-				% y axis is in units of dB attenuation
-				case {'DB_ATTEN', 'ATTEN'}
-					yStr = 'Attenuation (dB)';
-					yAtten = 1;
-					n = n + 1;
-				% yaxis is in units of dB SPL
-				case {'DB_SPL', 'DB'}
-					yStr = 'dB SPL';
-					yAtten = 0;
-					n = n + 1;
-				% use specified figure?
-				case {'FIG_H'}
-					figH = varargin{n+1};
-					n = n + 2;
-				% use specified axes?
-				case {'AX_H'}
-					axH = varargin{n+1};
-					n = n + 2;
-               % interpolate data?
-            case {'INTERP', 'INTERPOLATE'}
-               interpolateData = true;
-               if (n < length(varargin)) && isnumeric(varargin{n+1})
-                  interpolateN = varargin{n+1};
-                  n = n+2;
-               else
-                  n = n+1;
-               end
-            case {'DRAW_MESH'}
-               if islogical(varargin{n+1})
-                  drawMesh = varargin{n+1};
-                  n = n+ 2;
-               else
-                  error('%s: input error for DRAW_MESH option', mfilename);
-               end
-				otherwise
-					error('plotFRA: invalid option %s', varargin{n});
-			end
-		end
+%------------------------------------------------
+% allocate graphics handles
+%------------------------------------------------
+% figure handle
+figH = [];
+% axes handles
+axH = [];
+% output plot handles
+PH = [];    % FRA pcolor() handle
+WH = [];    
+
+%------------------------------------------------
+% process inputs
+%------------------------------------------------
+if nargin > 0
+   n = 1;
+   while n <= length(varargin)
+      switch	upper(varargin{n})
+         % plot type?
+         case {'BOTH', 'CHECKER', 'WATERFALL'}
+            plotType = upper(varargin{n});
+            n = n + 1;
+         % log frequency scale
+         case {'LOG_FREQ', 'LOGF', 'LOG'}
+            xUnits = 'LOG';
+            n = n + 1;
+         % linear freq scale
+         case {'LIN_FREQ', 'LINF', 'LIN'}
+            xUnits = 'LIN';
+            n = n + 1;
+         % y axis is in units of dB attenuation
+         case {'DB_ATTEN', 'ATTEN'}
+            yStr = 'Attenuation (dB)';
+            yAtten = 1;
+            n = n + 1;
+         % yaxis is in units of dB SPL
+         case {'DB_SPL', 'DB'}
+            yStr = 'dB SPL';
+            yAtten = 0;
+            n = n + 1;
+         % use specified figure?
+         case {'FIG_H'}
+            figH = varargin{n+1};
+            n = n + 2;
+         % use specified axes?
+         case {'AX_H'}
+            axH = varargin{n+1};
+            n = n + 2;
+         % interpolate data?
+         case {'INTERP', 'INTERPOLATE'}
+            interpolateData = true;
+            if (n < length(varargin)) && isnumeric(varargin{n+1})
+               interpolateN = varargin{n+1};
+               n = n+2;
+            else
+               n = n+1;
+            end
+         % draw mesh grid around color patches?
+         case {'DRAW_MESH'}
+            if islogical(varargin{n+1})
+               drawMesh = varargin{n+1};
+               n = n+ 2;
+            else
+               error('%s: input error for DRAW_MESH option', mfilename);
+            end
+         % pad levels to have checker plot draw patches for all levels?
+         case {'PADLEVEL'}
+            padLevel = true;
+            padLevelVal = varargin{n+1};
+            n = n+2;
+         % pad frequencies to have checker plot draw patches 
+         % for all frequencies?
+         case {'PADFREQ'}
+            padFreq = true;
+            padFreqVal = varargin{n+1};
+            n = n+2;
+            
+         otherwise
+            error('plotFRA: invalid option %s', varargin{n});
+      end
    end
-   
+end
 
-	%------------------------------------------------
-	% preparatory things
-	%------------------------------------------------
-   % create or set figure
-   if isempty(figH) && isempty(axH)
-      % if no figure or axes provided, create a figure
-      figH = figure;
-   elseif isempty(figH) && ~isempty(axH)
-      % if no figure and axes provided, use parent as figure
-      figH = get(axH(1), 'Parent');
-      % make current
+
+%------------------------------------------------
+% preparatory things
+%------------------------------------------------
+% create or set figure
+if isempty(figH) && isempty(axH)
+   % if no figure or axes provided, create a figure
+   figH = figure;
+elseif isempty(figH) && ~isempty(axH)
+   % if no figure and axes provided, use parent as figure
+   figH = get(axH(1), 'Parent');
+   % make current
+   figure(figH);
+else
+   % make provided figure current
+   figH = figure(figH);
+end
+
+% create or set axes
+if isempty(axH)
+   if strcmpi(plotType, 'BOTH')
+      % if both plots to be drawn, create subplots
+      % create subplots
       figure(figH);
+      axH(1) = subplot(211);
+      axH(2) = subplot(212);
+      axes(axH(1));
    else
-      % make provided figure current
-      figH = figure(figH);
+      % create single axes in current figure
+      axH = axes(figH);
    end
-   
-   % create or set axes
-   if isempty(axH)
-      if strcmpi(plotType, 'BOTH')
-         % if both plots to be drawn, create subplots
-         % create subplots
-         figure(figH);
-         axH(1) = subplot(211);
-         axH(2) = subplot(212);
-         axes(axH(1));
-      else
-         % create single axes in current figure
-         axH = axes(figH);
+else
+   % try setting each axes as current just to check
+   if strcmpi(plotType, 'CHECKER')
+      axes(axH(1));
+   elseif strcmpi(plotType, 'WATERFALL')
+      axes(axH(1));
+   elseif strcmpi(plotType, 'BOTH')
+        axes(axH(2));
+        axes(axH(1));
+   else
+      error('Unknown options %s', plotType)
+   end
+end
+
+
+
+ if padLevel || padFreq
+      if padLevel
+         if yAtten
+            % add padLevelVal to beginning of ydata
+            ydata = [padLevelVal ydata];
+         else
+            % add padLevelVal to end of ydata
+            ydata = [ydata padLevelVal];
+         end
+         % append duplicate bottom row of zdata
+         zdata = [zdata; zdata(end, :)];
       end
-   else
-      % try setting each axes as current just to check
-      if strcmpi(plotType, 'CHECKER')
-         axes(axH(1));
-      elseif strcmpi(plotType, 'WATERFALL')
-         axes(axH(1));
-      elseif strcmpi(plotType, 'BOTH')
-           axes(axH(2));
-           axes(axH(1));
-      else
-         error('Unknown options %s', plotType)
+      if padFreq
+         % append padFreqVal to end of xdata
+         xdata = [xdata padFreqVal];
+         % append duplicate last column to zdata
+         zdata = [zdata; zdata(:, end)];
       end
-   end
-   
-   % interpolate points?
-   if interpolateData
-      xdata = linspace(FRA.Freqs(1), FRA.Freqs(end), interpolateN);
-      zdata = zeros(FRA.nlevels, length(xdata));
-      for l = 1:FRA.nlevels
-         zdata(l, :) = makima(FRA.Freqs, FRA.MeanCount(l, :), xdata);
-      end
-   else
-      xdata = FRA.Freqs;
-      zdata = FRA.MeanCount;
-   end
-   
-	% log or lin freq?
-   if strcmpi(xUnits, 'LOG')
-      xdata = log10(xdata);
-   end
-   
-	% need to flip sorted atten to get
-	% higher atten (lower amplitude tones) at bottom of plot and
-	% lower atten (higher amp) at top, per FRA plot convention
-	% the y axis labels will be in reverse order, but we'll take care
-	% of that later
-   if yAtten
-      ydata = fliplr(FRA.Levels);
-   else
-      ydata = FRA.Levels;
-   end
-	%------------------------------------------------
-	% plot as color patch
-	%------------------------------------------------
-   if any(strcmpi(plotType, {'CHECKER', 'BOTH'}))
+      % draw checkerboard plot using pcolor (generates surface object)
+      PH(1) = pcolor(axH(1), xdata, ydata, zdata);
+      PH(2) = axH(1);
+else
+      % draw checkerboard plot using pcolor (generates surface object)
+      PH(1) = pcolor(axH(1), xdata, ydata, zdata);
+      PH(2) = axH(1);
+end
+
+generate_xyzdata;
+
+%{
+% interpolate points?
+if interpolateData
+   xdata = linspace(FRA.Freqs(1), FRA.Freqs(end), interpolateN);
+   zdata = zeros(FRA.nlevels, length(xdata));
+   for l = 1:FRA.nlevels
+      zdata(l, :) = makima(FRA.Freqs, FRA.MeanCount(l, :), xdata);
+   end      
+else
+   xdata = FRA.Freqs;
+   zdata = FRA.MeanCount;
+end
+%}
+
+% log or lin freq?
+if strcmpi(xUnits, 'LOG')
+   xdata = log10(xdata);
+end
+
+% need to flip sorted atten to get
+% higher atten (lower amplitude tones) at bottom of plot and
+% lower atten (higher amp) at top, per FRA plot convention
+% the y axis labels will be in reverse order, but we'll take care
+% of that later
+if yAtten
+   ydata = fliplr(FRA.Levels);
+else
+   ydata = FRA.Levels;
+end
+%------------------------------------------------
+% plot as color patch
+%------------------------------------------------
+if any(strcmpi(plotType, {'CHECKER', 'BOTH'}))
 %       if strcmpi(plotType, 'BOTH')
 %          subplot(211);
 %       end
 
-      % draw pseudocolor checkerboard
-      PH(1) = pcolor(axH(1), xdata, ydata, zdata);
-      PH(2) = axH(1);
-      % show color legend
-      colorbar(PH(2));
-      % deal with labels and title
-      xlabel(PH(2), xStr);
-      ylabel(PH(2), yStr);
-      title(PH(2), ...
-                  {	FRA.fname, ...
-                  sprintf('Avg Spike Count, [%d-%d] ms window', ...
-                                       FRA.window(1), FRA.window(2)), ...
-               }, ...
-               'Interpreter', 'none');
-      % re-do X tick labels to that they're more readable
-      xtl = get_lin_or_log_xlabel(get(PH(2), 'XTick'), xUnits);
-      set(PH(2), 'XTickLabel', xtl);
-      % correct the Y tick labels, as promised
-      if yAtten
-         set(PH(2), 'YTickLabel', flipud(get(gca, 'YTickLabel')));
-      end
-      % if drawMesh is false, set the surface edge color to 'none'
-      if ~drawMesh
+   % draw pseudocolor checkerboard using pcolor (generates surface object)
+   PH(1) = pcolor(axH(1), xdata, ydata, zdata);
+   PH(2) = axH(1);
+   
+   % show color legend
+   colorbar(PH(2));
+   % deal with labels and title
+   xlabel(PH(2), xStr);
+   ylabel(PH(2), yStr);
+   title(PH(2), ...
+               {	FRA.fname, ...
+               sprintf('Avg Spike Count, [%d-%d] ms window', ...
+                                    FRA.window(1), FRA.window(2)), ...
+            }, ...
+            'Interpreter', 'none');
+   % re-do X tick labels to that they're more readable
+   xtl = get_lin_or_log_xlabel(get(PH(2), 'XTick'), xUnits);
+   set(PH(2), 'XTickLabel', xtl);
+   % correct the Y tick labels, as promised
+   if yAtten
+      set(PH(2), 'YTickLabel', flipud(get(gca, 'YTickLabel')));
+   end
+   % if drawMesh is false, set the surface edge color to 'none'
+   if ~drawMesh
 %          tmpH = get(PH(2), 'Children');
 %          tmpH.EdgeColor = 'none';
-         set(PH(1), 'EdgeColor', 'none')
-      end
+      set(PH(1), 'EdgeColor', 'none')
    end
+end
 
-	%------------------------------------------------
-	% create subplot and plot waterfall 
-	% (in fashion similar to color patch)
-	%------------------------------------------------
-	if any(strcmpi(plotType, {'WATERFALL', 'BOTH'}))
+%------------------------------------------------
+% create subplot and plot waterfall 
+% (in fashion similar to color patch)
+%------------------------------------------------
+if any(strcmpi(plotType, {'WATERFALL', 'BOTH'}))
 % 		if strcmpi(plotType, 'BOTH')
 % 			subplot(212);
 % 		end
 
-      if strcmpi(plotType, 'BOTH')
-   		WH(1) = waterfall(axH(2), xdata, ydata, zdata);
-         WH(2) = axH(2);
-      else
-   		WH(1) = waterfall(axH(1), xdata, ydata, zdata);
-         WH(2) = axH(1);
-      end
+   if strcmpi(plotType, 'BOTH')
+      WH(1) = waterfall(axH(2), xdata, ydata, zdata);
+      WH(2) = axH(2);
+   else
+      WH(1) = waterfall(axH(1), xdata, ydata, zdata);
+      WH(2) = axH(1);
+   end
 
-		% labels, again deal with log labels
-		xlabel(WH(2), xStr);
-		ylabel(WH(2), yStr);
-		zlabel(WH(2), 'Spike Count');
-		xtl = get_lin_or_log_xlabel(get(WH(2), 'XTick'), xUnits);
-		set(WH(2), 'XTickLabel', xtl);
-		if yAtten
-			set(WH(2), 'YTickLabel', flipud(get(WH(2), 'YTickLabel')))
-		end
-	end
-	
-	%------------------------------------------------
-	% assign output
-	%------------------------------------------------
-	if nargout
-		varargout{1} = figH;
-		varargout{2} = PH;
-		varargout{3} = WH;
-      varargout{4} = {xdata, ydata, zdata};
-	end
+   % labels, again deal with log labels
+   xlabel(WH(2), xStr);
+   ylabel(WH(2), yStr);
+   zlabel(WH(2), 'Spike Count');
+   xtl = get_lin_or_log_xlabel(get(WH(2), 'XTick'), xUnits);
+   set(WH(2), 'XTickLabel', xtl);
+   if yAtten
+      set(WH(2), 'YTickLabel', flipud(get(WH(2), 'YTickLabel')))
+   end
 end
+
+%------------------------------------------------
+% assign output
+%------------------------------------------------
+if nargout
+   varargout{1} = figH;
+   varargout{2} = PH;
+   varargout{3} = WH;
+   varargout{4} = {xdata, ydata, zdata};
+end
+
+end   %********** END OF plotFRA FUNCTION ******************
+
+%***********************************************************************
+%***********************************************************************
+%***********************************************************************
+% INTERNAL FUNCTIONS
+%***********************************************************************
+%***********************************************************************
+%***********************************************************************
 
 %------------------------------------------------
 % internal function to format tick labels
